@@ -20,15 +20,17 @@ def run_formatudb(fastafile, databasefile="db.udb"):
 import glob
 import os
 
-udbs=glob.glob("./databases/*.udb")
+#udbs=glob.glob("./databases/*.udb")
 phage_genomes=glob.glob("./genomes/*")
     
     
 
-udbs=glob.glob("./databases/*.udb")
+#udbs=glob.glob("./databases/*.udb")
 #for db in udbs:
  #   dbname=db.split("/")[-1].split(".")[0] 
 #     os.mkdir("./blasts/"+dbname)
+
+udbs=["./databases/kegg.reduced.udb"]
 
 for p in phage_genomes:
     phage=p.split("/")[-1].split("f")[0]
@@ -39,5 +41,7 @@ for p in phage_genomes:
     #run_prodigal_phage(inputfasta=fastafile, out_gene=out_gene, out_prot=out_prot)
 
     for db in udbs:
-        dbname=db.split("/")[-1].split(".")[0]              
+        #dbname=db.split("/")[-1].split(".")[0]              
+        #run_ublastp(fastafile=out_prot, udb=db, out="./blasts/"+dbname+"/"+phage+"vs."+dbname+".out", evalue="1e-3")
+        dbname="kegg"
         run_ublastp(fastafile=out_prot, udb=db, out="./blasts/"+dbname+"/"+phage+"vs."+dbname+".out", evalue="1e-3")
