@@ -15,7 +15,7 @@ def run_formatudb(fastafile, databasefile="db.udb"):
     to_run="/home/sbiller/usearch7.0.1090_i86linux64 -makeudb_ublast "+fastafile+" -output "+databasefile
     subprocess.call(to_run.split(" "))
     
-#run_formatudb("./databases/kegg.reduced.fasta","kegg.reduced.udb")
+run_formatudb("./databases/kegg.reduced.fasta","kegg.reduced.udb")
 
 import glob
 import os
@@ -30,7 +30,7 @@ phage_genomes=glob.glob("./genomes/*")
  #   dbname=db.split("/")[-1].split(".")[0] 
 #     os.mkdir("./blasts/"+dbname)
 
-udbs=["./databases/kegg.reduced.udb"]
+udbs=["./databases/kegg.reduced.fasta"]
 
 for p in phage_genomes:
     phage=p.split("/")[-1].split("f")[0]
