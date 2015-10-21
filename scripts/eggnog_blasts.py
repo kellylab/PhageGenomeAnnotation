@@ -15,11 +15,11 @@ os.mkdir("./temp/")
 
 for p in phages[1:10]:
     blast_list=["cat"]
+    phage=p.split("/")[1].split("f")[0]
     for e in eggnog_dbs:
         fastafile=p
         udb=e
         evalue=1e-5
-        phage=p.split("/")[1].split("f")[0]
         out="./temp/"+phage+"vs."+udb.replace("./databases/","").replace(".fasta","")+".out
         run_ublastp(fastafile, out, udb, evalue)
         blast_list.append(out)
