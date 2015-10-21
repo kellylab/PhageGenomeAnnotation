@@ -30,7 +30,7 @@ phage_genomes=glob.glob("./genomes/*")
 
 #os.mkdir("./blasts/eggnog/")
 
-udbs=["./databases/eggnog4.proteins.all.fa"]
+udbs=["./databases/eggnog4.proteins.all.udb"]
 
 for p in phage_genomes:
     phage=p.split("/")[-1].split("f")[0]
@@ -44,4 +44,4 @@ for p in phage_genomes:
         #dbname=db.split("/")[-1].split(".")[0]              
         #run_ublastp(fastafile=out_prot, udb=db, out="./blasts/"+dbname+"/"+phage+"vs."+dbname+".out", evalue="1e-3")
         dbname="eggnog"
-        run_ublastp(fastafile=out_prot, udb=db, out="./blasts/"+dbname+"/"+phage+"vs."+dbname+".out", evalue="1e-3")
+        run_ublastp(fastafile=out_prot, udb=db, out="./blasts/"+dbname+"/"+phage+"vs."+dbname+".out", evalue="1e-5")

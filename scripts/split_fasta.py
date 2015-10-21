@@ -10,7 +10,10 @@ fasta_file=sys.argv[1]
 number_files=int(sys.argv[2])
 
 def split_fasta(number_files, fasta_file):
-    fasta=Fasta(fasta_file)
+    try:
+        fasta=Fasta(fasta_file)
+    except:
+        print "could not open fasta"
     number_seqs=len(fasta.keys())
     splits=int(np.ceil(number_seqs/number_files))
     #print(splits)

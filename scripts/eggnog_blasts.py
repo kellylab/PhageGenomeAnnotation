@@ -19,9 +19,11 @@ for p in phages[1:10]:
         fastafile=p
         udb=e
         evalue=1e-5
+        phage=p.split("/")[1].split("f")[0]
         out="./temp/"+phage+"vs."+udb.replace("./databases/","").replace(".fasta","")+".out
         run_ublastp(fastafile, out, udb, evalue)
         blast_list.append(out)
     args=blast_list+[">","./blasts/eggnog/"+phage+"vs.eggnog.out"]
+    subprocess.call(args)
     
 subprocess.call(["rm","-rf","./temp/"])
