@@ -32,7 +32,7 @@ phage_fnas=glob.glob("./fnas/*")
 
 udbs=["./databases/tara.udb"]
 
-for p in phage_genomes:
+for p in phage_fnas:
     phage=p.split("/")[-1].split("f")[0]
     fastafile="./genomes/"+phage+"fna"
     out_gene="./genes/"+phage+"gene"
