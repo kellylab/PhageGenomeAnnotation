@@ -15,26 +15,26 @@ def run_formatudb(fastafile, databasefile="db.udb"):
     to_run="/home/sbiller/usearch7.0.1090_i86linux64 -makeudb_ublast "+fastafile+" -output "+databasefile
     subprocess.call(to_run.split(" "))
     
-#run_formatudb("./databases/eggnog4.proteins.all.fa","./databases/eggnog4.udb")
+#run_formatudb("./databases/OM-RGC_seq.release.fna","./databases/tara.udb")
 
 import glob
 import os
 
 #udbs=glob.glob("./databases/*.udb")
-phage_genomes=glob.glob("./genomes/*")
+phage_fnas=glob.glob("./fnas/*")
     
 #udbs=glob.glob("./databases/*.udb")
 #for db in udbs:
  #   dbname=db.split("/")[-1].split(".")[0] 
 #     os.mkdir("./blasts/"+dbname)
 
-#os.mkdir("./blasts/eggnog/")
+#os.mkdir("./blasts/tara/")
 
-udbs=["./databases/eggnog4.proteins.all.udb"]
+udbs=["./databases/tara.udb"]
 
 for p in phage_genomes:
     phage=p.split("/")[-1].split("f")[0]
-    fastafile="./genomes/"+phage+"final.fasta"
+    fastafile="./genomes/"+phage+"fna"
     out_gene="./genes/"+phage+"gene"
     out_prot="./proteins/"+phage+"faa"
 
@@ -43,5 +43,5 @@ for p in phage_genomes:
     for db in udbs:
         #dbname=db.split("/")[-1].split(".")[0]              
         #run_ublastp(fastafile=out_prot, udb=db, out="./blasts/"+dbname+"/"+phage+"vs."+dbname+".out", evalue="1e-3")
-        dbname="eggnog"
+        dbname="tara"
         run_ublastp(fastafile=out_prot, udb=db, out="./blasts/"+dbname+"/"+phage+"vs."+dbname+".out", evalue="1e-5")
