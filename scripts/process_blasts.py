@@ -1,4 +1,5 @@
 #!/usr/bin/python
+#first go at script to write a gff3 file output from BLAST results and prodigal calls... better version in development.
 
 import subprocess
 import os
