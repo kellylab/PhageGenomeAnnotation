@@ -1,5 +1,6 @@
 #!usr/bin/python
-
+#The purpose of this script is to grab gene sequences from a genomic contig based on coordinates in prodigal .gff output
+#script currently customized for nahant phage genomes... 
 
 from Bio.Seq import reverse_complement
 from pyfaidx import Fasta
