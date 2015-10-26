@@ -3,6 +3,7 @@
 #script currently customized for nahant phage genomes... 
 
 from Bio.Seq import reverse_complement
+from Bio.Seq import translate
 from pyfaidx import Fasta
 import re
 
@@ -31,14 +32,13 @@ class cds(object):
         self.strand=strand
         self.tag=tag
         
-def adjust_position(position):
-    if "<" in position:
-        position=0
-    elif ">" in position:
-        position=-1
-    else:
-        position=int(position)-1
+def adjust_plus_strand_position(position):
+    position=int(position.replace("<","").replace(">",""))-1
     return position
+
+def adjust_negative_strand_position(position):
+    position=int(position.replace("<","").replace(">",""))
+    return(position)
 
 def check_partial(start, stop):
     if re.search(r">|<", str(start)+str(stop)):
@@ -75,16 +75,18 @@ def set_cds_objects(prodigal_file):      #prod prodigal file
                 strand="-"
                 start=loc.split("..")[1].replace(")\n","")
                 stop=loc.split("(")[1].split("..")[0]
+                tag=check_partial(start, stop)
+                start=adjust_negative_strand_position(start)
+                stop=adjust_negative_strand_position(stop)
 
             else:
                 strand="+"
                 start=loc.split()[1].split("..")[0]
                 stop=loc.split()[1].split("..")[1].replace("\n","")
+                tag=check_partial(start, stop)
+                start=adjust_plus_strand_position(start)
+                stop=adjust_plus_strand_position(stop)
             
-            tag=check_partial(start, stop)
-            
-            start=adjust_position(start)
-            stop=adjust_position(stop)
             
         
         obj=cds(t, start, stop, strand, tag)
@@ -102,9 +104,11 @@ def get_na_cds_fasta(genomic_fasta_file, prodigal_file, output_file):
         if record.strand=="-":
          
             na_cds_seq=reverse_complement(gseq[record.stop:record.start])
-            
+            #print "negative strand translation:" + translate(na_cds_seq)
         else:
             na_cds_seq=gseq[record.start:record.stop]
+            #print "positive strand translation:"+translate(na_cds_seq)
+            
         out+=">"+record.locus_tag+" "+record.tag+"\n"+na_cds_seq+"\n"
     #return out
     out1=open(output_file, "w")
