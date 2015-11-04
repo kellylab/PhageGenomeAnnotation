@@ -85,9 +85,7 @@ def set_cds_objects(prodigal_file):      #prod prodigal file
                 stop=loc.split()[1].split("..")[1].replace("\n","")
                 tag=check_partial(start, stop)
                 start=adjust_plus_strand_position(start)
-                stop=adjust_plus_strand_position(stop)
-            
-            
+                stop=adjust_plus_strand_position(stop)            
         
         obj=cds(t, start, stop, strand, tag)
         cds_records.append(obj)
