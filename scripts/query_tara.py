@@ -22,7 +22,7 @@ def query_tara_db(tid):
 phage_genomes=glob.glob("/nobackup1/jbrown/annotation/genomes/*fasta")
 phages=[i.split("/")[-1].split("f")[0] for i in phage_genomes]
 
-phage=phages[0]
+phage="1.161.O."
  
 faa="/nobackup1/jbrown/annotation/proteins/"+phage+"faa"
 prod="/nobackup1/jbrown/annotation/genes/"+phage+"gene"

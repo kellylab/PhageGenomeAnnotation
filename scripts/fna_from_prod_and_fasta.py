@@ -6,9 +6,8 @@ from Bio.Seq import reverse_complement
 from Bio.Seq import translate
 from pyfaidx import Fasta
 import re
-
-"""
 import sys
+'''
 prodigal_file=sys.argv[1]
 genomic_fasta_file=sys.argv[2]
 
@@ -16,7 +15,7 @@ if len(sys.argv)==4:
     output_file=sys.argv[3]
 else:
     output_file=genomic_fasta_file.replace(".fasta",".cds.fna")
-"""
+'''
 
 class cds(object):
     locus_tag=""
@@ -112,3 +111,4 @@ def get_na_cds_fasta(genomic_fasta_file, prodigal_file, output_file):
     out1=open(output_file, "w")
     out1.write(out)
     out1.close()
+

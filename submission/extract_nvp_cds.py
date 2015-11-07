@@ -4,11 +4,13 @@ import glob
 import os
 from fna_from_prod_and_fasta import *
 
-os.mkdir("./fna")
+#os.mkdir("./fna")
 
-phage_genomes=glob.glob("./genomes/*")
+#phage_genomes=glob.glob("./genomes/*")
 
-phages=[i.split("/")[2].split("f")[0] for i in phage_genomes]
+#phages=[i.split("/")[2].split("f")[0] for i in phage_genomes]
+
+phages="1.141.A."
 
 for phage in phages:
     prod="./genes/"+phage+"gene"

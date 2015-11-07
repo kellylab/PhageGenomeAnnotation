@@ -19,6 +19,8 @@ aclame_blast_path="/nobackup1/jbrown/annotation/blasts/aclame/"
 cvp_blast_path="/nobackup1/jbrown/annotation/blasts/CVP/"
 kegg_blast_path="/nobackup1/jbrown/annotation/blasts/kegg/"
 tara_blast_path="/nobackup1/jbrown/annotation/blasts/tara.translated/"
+egg_blast_path="/nobackup1/jbrown/annotation/blasts/eggnog/"
+
 
 
 def run_prodigal_phage(inputfasta, out_gene, out_prot):
@@ -98,33 +100,43 @@ def set_up_blast_dict(blast, prod, faa, phage):
             blast_dict[lt]=[hit, pct_cov, pct_id, ev]
     return blast_dict
 
-#load blast database dictionaries:
-if os.path.exists("/nobackup1/jbrown/annotation/databases/pickled_dicts/"):
-    #path to dictionaries stored on server:
-    aclame_dict=pickle.load(open("/nobackup1/jbrown/annotation/databases/pickled_dicts/aclame_dict.p","rb"))
-    cog_dict=pickle.load(open("/nobackup1/jbrown/annotation/databases/pickled_dicts/cog_dict.p","rb"))
-    cog_defs=pickle.load(open("/nobackup1/jbrown/annotation/databases/pickled_dicts/cog_def.p","rb"))
-    pfam_dict=pickle.load(open("/nobackup1/jbrown/annotation/databases/pickled_dicts/pfam_dict.p","rb"))
-    pfam_defs=pickle.load(open("/nobackup1/jbrown/annotation/databases/pickled_dicts/pfam_def.p","rb"))
-    cvp_dict=pickle.load(open("/nobackup1/jbrown/annotation/databases/pickled_dicts/cvp_dict.p","rb"))
-    dict_check=True
-elif os.path.exists("./databases/pickled_dicts/"):
-    #path to dictionaries stored on jmb@alarmism.einstein.yu.edu
-    aclame_dict=pickle.load(open("./databases/pickled_dicts/aclame_dict.p","rb"))
-    cog_dict=pickle.load(open("./databases/pickled_dicts/cog_dict.p","rb"))
-    cog_defs=pickle.load(open("./databases/pickled_dicts/cog_def.p","rb"))
-    pfam_dict=pickle.load(open("./databases/pickled_dicts/pfam_dict.p","rb"))
-    pfam_defs=pickle.load(open("./databases/pickled_dicts/pfam_def.p","rb"))
-    cvp_dict=pickle.load(open("./databases/pickled_dicts/cvp_dict.p","rb"))
-    dict_check=True
-else:
-    print("blast database dictionaries not found")
-    dict_check=False
-
 #functions for adding annotations/info to BLAST hit based on BLAST database
 
+#functions for adding annotations/info to BLAST hit based on BLAST database
+from Bio.KEGG import REST
+import collections
+import sqlite3
+
+###sqlite3 database checking functions:
+def query_og1_tbl(qid, tbl, db_location='/pool001/jbrown/blast_db.sqlite'):
+    conn=sqlite3.connect(db_location)
+    c=conn.cursor()
+    c.execute("SELECT OG from "+tbl+" where ID='"+qid+"'")
+    output=c.fetchone()
+    result=output[0]
+    conn.close()
+    return result
+
+def query_og2_tbl(qid, tbl, db_location='/pool001/jbrown/blast_db.sqlite'):
+    conn=sqlite3.connect(db_location)
+    c=conn.cursor()
+    c.execute("SELECT function from "+tbl+" where OG='"+qid+"'")
+    output=c.fetchone()
+    result=output[0]
+    conn.close()
+    return result
+
+def query_func_tbl(qid, tbl, db_location='/pool001/jbrown/blast_db.sqlite'):
+    conn=sqlite3.connect(db_location)
+    c=conn.cursor()
+    c.execute("SELECT function from "+tbl+" where ID='"+qid+"'")
+    output=c.fetchone()
+    result=output[0]
+    conn.close()
+    return result
+
+###find go and functional annotations based on BLAST identifier:
 def add_kegg_descript(hit):
-    
     desc= REST.kegg_find("genes", hit).read()
     K=re.search(r"K[0-9]{5}", desc)
     KEGG=K.group(0)
@@ -133,40 +145,33 @@ def add_kegg_descript(hit):
     return [KEGG, ann]
 
 def add_cog_descript(hit):
-    if dict_check:
-        cog=cog_dict[(hit.split("|")[1])]
-        func=cog_defs[cog].replace("\n","")
-        return [cog, func]
-    else:
-        print "COG database is not loaded"
-        return ""
+    cog=query_og1_tbl((hit.split("|")[1]),"cog1")
+    func=query_og2_tbl(cog,"cog2").replace("\n","")
+    return [cog, func]
 
 def add_pfam_descript(hit):
-    if dict_check:
-        pfam=pfam_dict[hit].split(".")[0]
-        function=pfam_defs[pfam].replace("\n","")
-        return [pfam, function]
-    else:
-        print "pfam database is not loaded"
-        return ""
+    pfam=query_og1_tbl(hit,"pfam1").split(".")[0]
+    function=query_og2_tbl(pfam, "pfam2").replace("\n","")
+    return [pfam, function]
 
 def add_aclame_descript(hit):
-    if dict_check:
-        annotation=aclame_dict[hit]
-        return [hit, annotation]
-    else:
-        print "aclame database not loaded"
-        return ""
+    annotation=query_func_tbl(hit, "aclame")[0]
+    return [hit, annotation]
 
 def add_cvp_descript(hit):
-    func=cvp_dict[hit]
+    func=query_func_tbl(hit, "cvp")[0]
     return [hit, func]
+
+def add_egg_descript(hit):
+    og=query_og1_tbl(hit, "egg1")
+    func=query_og2_tbl(og, "egg2")
+    return [og, func]
 
 def add_tara_descript(hit):   #right now just adding the closest hit, TARA sequences come with COG/Pfam info etc 
     return [hit, hit]
 
 db_dict={"kegg":add_kegg_descript, "cog":add_cog_descript, "pfam":add_pfam_descript, "aclame":add_aclame_descript,
-        "cvp":add_cvp_descript, "tara":add_tara_descript}
+        "cvp":add_cvp_descript, "tara":add_tara_descript, "egg":add_egg_descript}
 
 def annotated_blast_dict(blast, prod, faa, db, phage):
     blast_dict=set_up_blast_dict(blast, prod, faa, phage)
@@ -190,8 +195,8 @@ def get_prod_cds_info(i, prod, digits, phage):
     if len(loc.split())==2:
         if "complement" in prod[i].split()[1]:
             strand="-"
-            start=loc.split("..")[1].replace(")\n","")
-            stop=loc.split("(")[1].split("..")[0]
+            stop=loc.split("..")[1].replace(")\n","")
+            start=loc.split("(")[1].split("..")[0]
         else:
             strand="+"
             start=loc.split()[1].split("..")[0]
@@ -255,6 +260,7 @@ def cds_blast_annotations_to_gff3(phage):
     cvp_blast=cvp_blast_path+phage+"vs.CVP.out"
     kegg_blast=kegg_blast_path+phage+"vs.kegg.out"
     tara_blast=tara_blast_path+phage+"vs.tara.translated.out"
+    egg_blast=egg_blast_path+phage+"vs.eggnog.out"
 
     Sequence=open(prod).readlines()[0].split(";")[2].split("=")[1].replace('"','')
     
@@ -265,6 +271,7 @@ def cds_blast_annotations_to_gff3(phage):
     aclame_blast_dict=annotated_blast_dict(blast=aclame_blast, prod=prod, faa=faa, db="aclame", phage=phage)
     cvp_blast_dict=annotated_blast_dict(blast=cvp_blast, prod=prod, faa=faa, db="cvp", phage=phage)
     tara_blast_dict=annotated_blast_dict(blast=tara_blast, prod=prod, faa=faa, db="tara", phage=phage)
+    egg_blast_dict=annotated_blast_dict(blast=egg_blast, prod=prod, faa=faa, db="egg", phage=phage)
 
     #prioritize and name dicts:
     #preferred blast dbs to annotate from if there's a match:
