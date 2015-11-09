@@ -47,19 +47,22 @@ def set_up_blast_dict(blast, prod, faa, phage):
     len_dict=get_prot_lens(faa, phage)
     records=[]
     blast_dict={}
-    blast=open(blast).readlines()
-    for line in blast:
-        name=line.split(" ")[0]
-        hit=line.split("\t")[1]
-        lt=get_locus_tag(name, digits=digits, phage=phage)
-        prot_len=len_dict[lt]
-        aln_len=int(line.split("\t")[3])
-        pct_id=float(line.split("\t")[2])
-        ev=line.split("\t")[-2]
-        pct_cov=(aln_len/prot_len)*100
-        if pct_id>35 and pct_cov>75 and lt not in records:
-            records.append(lt)
-            blast_dict[lt]=[hit, pct_cov, pct_id, ev]
+    try:
+        blast=open(blast).readlines()
+        for line in blast:
+            name=line.split(" ")[0]
+            hit=line.split("\t")[1]
+            lt=get_locus_tag(name, digits=digits, phage=phage)
+            prot_len=len_dict[lt]
+            aln_len=int(line.split("\t")[3])
+            pct_id=float(line.split("\t")[2])
+            ev=line.split("\t")[-2]
+            pct_cov=(aln_len/prot_len)*100
+            if pct_id>35 and pct_cov>75 and lt not in records:
+                records.append(lt)
+                blast_dict[lt]=[hit, pct_cov, pct_id, ev]
+    except:
+        print "could not open %s" %blast
     return blast_dict
 
 #functions for adding annotations/info to BLAST hit based on BLAST database
@@ -139,18 +142,21 @@ def add_egg_descript(hit):
 def add_tara_descript(hit):   #right now just adding the closest hit, TARA sequences come with COG/Pfam info etc 
     return [hit, hit]
 
-db_dict={"kegg":add_kegg_descript, "cog":add_cog_descript, "pfam":add_pfam_descript, "aclame":add_aclame_descript,
-        "cvp":add_cvp_descript, "tara":add_tara_descript, "egg":add_egg_descript}
-
 def add_pog_descript(hit):
     og=query_og1_tbl(hit.split("|")[1], "pog")
     function=query_og2_tbl(og, "pog")
     return [og, function]
 
-db_dict={"kegg":add_kegg_descript, "cog":add_cog_descript, "pfam":add_pfam_descript, "aclame":add_aclame_descript,
-        "cvp":add_cvp_descript, "tara":add_tara_descript, "egg":add_egg_descript, "pog":add_pog_descript}
-
 def annotated_blast_dict(blast, prod, faa, db, phage):
+    db_dict={"kegg":add_kegg_descript, 
+         "cog":add_cog_descript, 
+         "pfam":add_pfam_descript, 
+         "aclame":add_aclame_descript,
+         "cvp":add_cvp_descript, 
+         "tara":add_tara_descript, 
+         "egg":add_egg_descript, 
+         "pog":add_pog_descript}
+
     blast_dict=set_up_blast_dict(blast, prod, faa, phage)
     blast_db_function=db_dict[db]
     for i in blast_dict.keys():
@@ -181,5 +187,12 @@ def load_blast_files(phage):
     egg_blast_dict=annotated_blast_dict(blast=egg_blast, prod=prod, faa=faa, db="egg", phage=phage)
     pog_blast_dict=annotated_blast_dict(blast=pog_blast, prod=prod, faa=faa, db="pog", phage=phage)
     
-    blasts={"kegg":kegg_blast_dict, "pfam":pfam_blast_dict, "cog":cog_blast_dict, "aclame":aclame_blast_dict,"cvp":cvp_blast_dict, "tara":tara_blast_dict, "egg":egg_blast_dict, "pog":pog_blast_dict}
+    blasts={"kegg":kegg_blast_dict, 
+            "pfam":pfam_blast_dict, 
+            "cog":cog_blast_dict, 
+            "aclame":aclame_blast_dict,
+            "cvp":cvp_blast_dict, 
+            "tara":tara_blast_dict, 
+            "egg":egg_blast_dict, 
+            "pog":pog_blast_dict}
     return blasts
