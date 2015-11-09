@@ -1,7 +1,11 @@
 #!usr/bin/python
+from __future__ import division
+from pyfaidx import Fasta
+import re
+
 
 #paths
-prod_path="/nobackup1/jbrown/annotation/gene/"
+prod_path="/nobackup1/jbrown/annotation/genes/"
 faa_path="/nobackup1/jbrown/annotation/proteins/"
     
 pfam_blast_path="/nobackup1/jbrown/annotation/blasts/Pfam/"
@@ -11,12 +15,8 @@ cvp_blast_path="/nobackup1/jbrown/annotation/blasts/CVP/"
 kegg_blast_path="/nobackup1/jbrown/annotation/blasts/kegg/"
 tara_blast_path="/nobackup1/jbrown/annotation/blasts/tara.translated/"
 egg_blast_path="/nobackup1/jbrown/annotation/blasts/eggnog/"
+pog_blast_path="/nobackup1/jbrown/annotation/blasts/pog/"
 
-#get number of genes in genome to know how many digits to use in locus tag
-from __future__ import division
-from Bio.KEGG import REST
-from pyfaidx import Fasta
-import re
 
 def get_digits(faa):
     faa=open(faa).read()
@@ -29,9 +29,6 @@ def get_locus_tag(line, digits, phage):
     number=query.split("_")[-1]
     z="0"*(digits-len(number))
     return "NVP"+phage.replace(".","")+"_"+z+number
-        
-
-from pyfaidx import Fasta
 
 def get_prot_lens(faa_file, phage):
     len_dict={}
@@ -69,7 +66,6 @@ def set_up_blast_dict(blast, prod, faa, phage):
 
 #functions for adding annotations/info to BLAST hit based on BLAST database
 from Bio.KEGG import REST
-import collections
 import sqlite3
 
 ###sqlite3 database checking functions:
@@ -146,6 +142,14 @@ def add_tara_descript(hit):   #right now just adding the closest hit, TARA seque
 db_dict={"kegg":add_kegg_descript, "cog":add_cog_descript, "pfam":add_pfam_descript, "aclame":add_aclame_descript,
         "cvp":add_cvp_descript, "tara":add_tara_descript, "egg":add_egg_descript}
 
+def add_pog_descript(hit):
+    og=query_og1_tbl(hit.split("|")[1], "pog")
+    function=query_og2_tbl(og, "pog")
+    return [og, function]
+
+db_dict={"kegg":add_kegg_descript, "cog":add_cog_descript, "pfam":add_pfam_descript, "aclame":add_aclame_descript,
+        "cvp":add_cvp_descript, "tara":add_tara_descript, "egg":add_egg_descript, "pog":add_pog_descript}
+
 def annotated_blast_dict(blast, prod, faa, db, phage):
     blast_dict=set_up_blast_dict(blast, prod, faa, phage)
     blast_db_function=db_dict[db]
@@ -155,6 +159,7 @@ def annotated_blast_dict(blast, prod, faa, db, phage):
         blast_dict[i]+=info  
     return blast_dict
 
+#load blast files for genome into dict of blast results 
 def load_blast_files(phage):
     prod=prod_path+phage+"gene"
     faa=faa_path+phage+"faa"
@@ -165,6 +170,8 @@ def load_blast_files(phage):
     kegg_blast=kegg_blast_path+phage+"vs.kegg.out"
     tara_blast=tara_blast_path+phage+"vs.tara.translated.out"
     egg_blast=egg_blast_path+phage+"vs.eggnog.out"
+    pog_blast=pog_blast_path+phage+"vs.pog.out"
+    
     kegg_blast_dict=annotated_blast_dict(blast=kegg_blast, prod=prod, faa=faa, db="kegg", phage=phage)
     pfam_blast_dict=annotated_blast_dict(blast=pfam_blast, prod=prod, faa=faa, db="pfam", phage=phage)
     cog_blast_dict=annotated_blast_dict(blast=cog_blast, prod=prod, faa=faa, db="cog", phage=phage)
@@ -172,6 +179,7 @@ def load_blast_files(phage):
     cvp_blast_dict=annotated_blast_dict(blast=cvp_blast, prod=prod, faa=faa, db="cvp", phage=phage)
     tara_blast_dict=annotated_blast_dict(blast=tara_blast, prod=prod, faa=faa, db="tara", phage=phage)
     egg_blast_dict=annotated_blast_dict(blast=egg_blast, prod=prod, faa=faa, db="egg", phage=phage)
-    blasts={"kegg":kegg_blast_dict, "pfam":pfam_blast_dict, "cog":cog_blast_dict, "aclame":aclame_blast_dict,"cvp":cvp_blast_dict, "tara":tara_blast_dict, "egg":egg_blast_dict}
-    return blasts
+    pog_blast_dict=annotated_blast_dict(blast=pog_blast, prod=prod, faa=faa, db="pog", phage=phage)
     
+    blasts={"kegg":kegg_blast_dict, "pfam":pfam_blast_dict, "cog":cog_blast_dict, "aclame":aclame_blast_dict,"cvp":cvp_blast_dict, "tara":tara_blast_dict, "egg":egg_blast_dict, "pog":pog_blast_dict}
+    return blasts
