@@ -35,13 +35,7 @@ def get_prod_cds_info(i, prod, digits, phage):
 
 gene_id="NVP1161O_169"
 
-def find_best_hit2(gene_id, blast_dict):
-    ann1=["cog","pfam","aclame","kegg","egg", "pog"]
-    ann2=[]             #tara excluded because no solid annotations provided (only poor OG assignments)
-
-    evals=1
-    annotation=""
-    best_hit=""
+def id_blast_hits(gene_id, blast_dict, ann1):
     hits=[]
     es=[]
     names=[]
@@ -51,21 +45,26 @@ def find_best_hit2(gene_id, blast_dict):
             hits.append(hit[-1])
             es.append(float(hit[3]))
             names.append(ann1[i])
-    if len(hits)>0:
-        best_annotation=[hits[es.index(min(es))],names[es.index(min(es))]]
-    else:
-        for i in range(0, len(ann2)):
-            if gene_id in blast_dict[ann2[i]].keys():
-                hit=blast_dict[ann2[i]][gene_id]
-                hits.append(hit[-1])
-                es.append(float(hit[3]))
-                names.append(ann2[i])
-        if len(hits)>0:
-            best_annotation=[hits[es.index(min(es))],names[es.index(min(es))]]
-        else:
-            best_annotation=["",""]
+    return [hits, es, names]
 
-    #print("best annotation for"+gene_id+" is from "+best_hit+" with e-value "+str(evals)+" and annotation of "+annotation)
+
+def find_best_hit2(gene_id, blast_dict, ann1=["cog","pfam","aclame","kegg","egg","pog"]):
+    evals=1
+    annotation=""
+    best_hit=""
+    ids=id_blast_hits(gene_id, blast_dict, ann1)
+    hits=ids[0]
+    es=ids[1]
+    names=ids[2]
+    if len(ids[0])>0:
+        best_annotation=[hits[es.index(min(es))],names[es.index(min(es))]]
+        if re.search(r"none|^NA|[\d]{1,5}\.\.[\d]{1,5}|hypothetical", best_annotation[0]):
+            ann1.remove(best_annotation[1])
+            find_best_hit2(gene_id, blast_dict, ann1=ann1)
+        else:
+            return best_annotation
+    else:
+        best_annotation=["",""]
     return best_annotation 
 
 def gff3_header(prod):
