@@ -73,7 +73,7 @@ def gff3_header(prod):
 
 #merge BLAST results into one gff3
     
-def cds_blast_annotations_to_gff3(phage):
+def cds_blast_annotations_to_gff3(phage, cov_thresh=75):
     #prodigal and fasta files:
     prod=prod_path+phage+"gene"
     faa=faa_path+phage+"faa"
@@ -82,7 +82,7 @@ def cds_blast_annotations_to_gff3(phage):
     ogs=["kegg","pfam","cog","egg", "pog"]
     annotes=["aclame","tara","cvp"]
     
-    blast_dict=load_blast_files(phage)
+    blast_dict=load_blast_files(phage, cov_thresh=cov_thresh)
     
     out=""  #set up string to write to
     
@@ -169,14 +169,14 @@ def tRNA_scan_to_gff3(phage):
         return ""
     
 #put them all together:
-def write_gff3_file(phage, output_file):
+def write_gff3_file(phage, output_file, cov_thresh=75):
     prod=prod_path+phage+".gene"
     faa=faa_path+phage+".faa"
     genomic_fasta="/nobackup1/jbrown/annotation/genomes/%sfinal.fasta" % phage
     
     out=open(output_file,"w")
     #out.write(gff3_header(phage+"gene"))
-    out.write(cds_blast_annotations_to_gff3(phage))
+    out.write(cds_blast_annotations_to_gff3(phage, cov_thresh=cov_thresh))
     
     
     out.write(tRNA_scan_to_gff3(phage))
@@ -201,7 +201,7 @@ def query_tara_db(tid):
     conn.close()
     return [gene, egg, ko, kfunc]
 
-def cds_blast_annotations_to_table(phage):
+def cds_blast_annotations_to_table(phage, cov_thresh=75):
     #prodigal and fasta files:
     prod=prod_path+phage+"gene"
     faa=faa_path+phage+"faa"
@@ -210,13 +210,13 @@ def cds_blast_annotations_to_table(phage):
     ogs=["kegg","pfam","cog","egg"]
     annotes=["aclame","tara","cvp"]
     
-    blast_dict=load_blast_files(phage)
+    blast_dict=load_blast_files(phage, cov_thresh=cov_thresh)
     
     out=""  #set up string to write to
     #write gff3 lines from prodigal files and blast dicts:
     out=""
-    out+="Genome\tlocus_tag\ttype\tstart\tstop\tstrand\tbest_hit_annotation\t"
-    out+="KEGG\tPFam\tCOG\tACLAME\tCVP\tTARA\n"
+    #out+="genome\tlocus_tag\ttype\tstart\tstop\tstrand\tbest_hit_annotation\t"
+    #out+="kegg\tpfam\tcog\tegg\taclame\ttara\tcvp\n"
     
     #run through annotations of each prodigal-identified CDS:
     prod=open(prod).readlines()
@@ -252,7 +252,7 @@ def cds_blast_annotations_to_table(phage):
             if locus_tag in og_dict.keys():
                 out+=og_dict[locus_tag][-2]+"\t"
             else:
-                out+=" \t"
+                out+="NA\t"
 
         #Add db closest hits to notes
         for d in range(0, len(annotes)):
@@ -260,8 +260,44 @@ def cds_blast_annotations_to_table(phage):
             if locus_tag in annote_dict.keys():
                 out+=annote_dict[locus_tag][-2]+'\t'
             else:
-                out+=" \t"
+                out+="NA\t"
         out+="\n"
 
     return out
 
+def kegg_egg_pog_tbl(phage, cov_thresh=75):
+    #prodigal and fasta files:
+    prod=prod_path+phage+"gene"
+    faa=faa_path+phage+"faa"
+    Sequence=open(prod).readlines()[0].split(";")[2].split("=")[1].replace('"','')
+    
+    ogs=["kegg","egg","pog"]
+    og_lens={"kegg":7,"egg":7,"pog":9}
+    blast_dict=load_kegg_egg_pog_blast(phage, cov_thresh=cov_thresh)
+    
+    out=""  #set up string to write to
+
+    
+    #run through annotations of each prodigal-identified CDS:
+    prod=open(prod).readlines()
+    digits=get_digits(faa)
+    
+    #write lines from prodigal files and blast dicts:
+    for i in range(2,len(prod)-1,2):
+        out+=Sequence+"\t"
+        
+        
+        locus_tag=get_prod_cds_info(i, prod, digits, phage)[0]
+        out+=locus_tag+"\t"
+        
+        #Add OG annotations:
+        for d in range(0, len(ogs)):
+            og_dict=blast_dict[ogs[d]]
+            if locus_tag in og_dict.keys():
+                for entry in og_dict[locus_tag]:
+                    out+=str(entry)+"\t"
+            else:
+                out+="NA\t"*og_lens[ogs[d]]
+        out+="\n"
+
+    return out

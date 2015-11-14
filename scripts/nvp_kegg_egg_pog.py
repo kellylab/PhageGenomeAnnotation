@@ -5,8 +5,10 @@ import glob
 from nvp_blast_processing import *
 from nvp_output_scripts import *
 
-if len(sys.argv)==2:
-    phage=sys.argv[1]
+output=sys.argv[1]
+
+if len(sys.argv)==3:
+    phage=sys.argv[2]
 else:
     phage="*"
     
@@ -14,10 +16,9 @@ phage_genomes=glob.glob("/nobackup1/jbrown/annotation/genomes/"+phage+"final.fas
 
 phages=[i.split("/")[-1].replace("final.fasta","") for i in phage_genomes]
 
-big=open("all_annotations.20151113.txt","w")
+out=open(output, "w")
 
 for p in phages:
-    write_gff3_file(p, "/nobackup1/jbrown/annotation/gff3/"+p+"annotations.gff3")
-    big.write(cds_blast_annotations_to_table(p))
-big.close()
-              
+    out.write(kegg_egg_pog_tbl(p))
+    
+out.close()

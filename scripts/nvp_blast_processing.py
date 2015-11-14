@@ -42,7 +42,7 @@ def get_prot_lens(faa_file, phage):
     return len_dict
 
 #set up dict of general info from BLAST:
-def set_up_blast_dict(blast, prod, faa, phage):
+def set_up_blast_dict(blast, prod, faa, phage, cov_thresh=75):
     digits=get_digits(faa)
     len_dict=get_prot_lens(faa, phage)
     records=[]
@@ -58,7 +58,7 @@ def set_up_blast_dict(blast, prod, faa, phage):
             pct_id=float(line.split("\t")[2])
             ev=line.split("\t")[-2]
             pct_cov=(aln_len/prot_len)*100
-            if pct_id>35 and pct_cov>75 and lt not in records:
+            if pct_id>35 and pct_cov>cov_thresh and lt not in records:
                 records.append(lt)
                 blast_dict[lt]=[hit, pct_cov, pct_id, ev]
     except:
@@ -90,6 +90,15 @@ def query_og2_tbl(qid, tbl, db_location='/pool001/jbrown/blast_db.sqlite'):
     conn.close()
     return result
 
+def query_og3_tbl(qid, tbl, db_location='/pool001/jbrown/blast_db.sqlite'):
+    conn=sqlite3.connect(db_location)
+    c=conn.cursor()
+    c.execute("SELECT category from "+tbl+" where ID='"+qid+"'")
+    output=c.fetchone()
+    result=output[0]
+    conn.close()
+    return result
+
 def query_func_tbl(qid, tbl, db_location='/pool001/jbrown/blast_db.sqlite'):
     conn=sqlite3.connect(db_location)
     c=conn.cursor()
@@ -99,17 +108,60 @@ def query_func_tbl(qid, tbl, db_location='/pool001/jbrown/blast_db.sqlite'):
     conn.close()
     return result
 
+def query_phy_tbl(qid, tbl, db_location='/pool001/jbrown/blast_db.sqlite'):
+    conn=sqlite3.connect(db_location)
+    c=conn.cursor()
+    c.execute("SELECT phy1, phy2, phy3 from "+tbl+" where ID='"+qid+"'")
+    output=c.fetchone()
+    result=output
+    conn.close()
+    return result
+
 ###find go and functional annotations based on BLAST identifier:
 def add_kegg_descript(hit):
     try:
         desc= REST.kegg_find("genes", hit).read()
-        K=re.search(r"K[0-9]{5}", desc)
-        KEGG=K.group(0)
-        a=re.search(r"(?<=K[0-9]{5}).*", desc)
-        ann=a.group(0)
+        try:
+            K=re.search(r"K[0-9]{5}", desc)
+            KEGG=K.group(0)
+        except:
+            KEGG="none"
+        try:
+            a=re.search(r"(?<=K[0-9]{5}).*", desc).replace("\n","")
+            ann=a.group(0)
+        except:
+            try:
+                ann=desc.split("\t")[1].split(";")[0].replace("\n","")
+            except:
+                ann="none"
         return [KEGG, ann]
     except:
         return ["none", "none"]
+    
+def add_kegg_descript2(hit):
+    try:
+        desc= REST.kegg_find("genes", hit).read()
+        try:
+            K=re.search(r"K[0-9]{5}", desc)
+            KEGG=K.group(0)
+        except:
+            KEGG="none"
+        try:
+            a=re.search(r"(?<=K[0-9]{5}).*", desc).replace("\n","")
+            ann=a.group(0)
+        except:
+            try:
+                ann=desc.split("\t")[1].split(";")[0].replace("\n","")
+            except:
+                ann="none"
+        try:
+            mod=REST.kegg_link('module', hit).read()
+            module=mod.split(":")[2].split("_")[-1].replace("\n","")
+        except:
+            module="none"
+        return [module, KEGG, ann]
+    except:
+        return ["none","none", "none"]
 
 def add_cog_descript(hit):
     cog=query_og1_tbl((hit.split("|")[1]),"cog1")
@@ -129,7 +181,6 @@ def add_cvp_descript(hit):
     func=query_func_tbl(hit, "cvp")
     return [hit, func]
 
-##need to add if statement to deal with egg database entries that do not have an OG...
 def add_egg_descript(hit):
     try:
         og=query_og1_tbl(hit, "egg1")
@@ -139,6 +190,17 @@ def add_egg_descript(hit):
         func="none"
     return [og, func]
 
+def add_egg_descript2(hit):
+    try:
+        og=query_og1_tbl(hit, "egg1")
+        func=query_og2_tbl(og, "egg2")
+        cat=query_og3_tbl(hit, "egg1")
+    except:
+        og="none"
+        func="none"
+        cat="none"
+    return [cat, og, func]
+
 def add_tara_descript(hit):   #right now just adding the closest hit, TARA sequences come with COG/Pfam info etc 
     return [hit, hit]
 
@@ -147,7 +209,14 @@ def add_pog_descript(hit):
     function=query_og2_tbl(og, "pog")
     return [og, function]
 
-def annotated_blast_dict(blast, prod, faa, db, phage):
+def add_pog_descript2(hit):
+    og=query_og1_tbl(hit.split("|")[1], "pog")
+    function=query_og2_tbl(og, "pog")
+    phylog=query_phy_tbl(hit.split("|")[1],"pog")
+    phylist=[i.split("]")[-1] for i in phylog]
+    return [og, function]+phylist
+    
+def annotated_blast_dict(blast, prod, faa, db, phage, cov_thresh=75):
     db_dict={"kegg":add_kegg_descript, 
          "cog":add_cog_descript, 
          "pfam":add_pfam_descript, 
@@ -157,7 +226,20 @@ def annotated_blast_dict(blast, prod, faa, db, phage):
          "egg":add_egg_descript, 
          "pog":add_pog_descript}
 
-    blast_dict=set_up_blast_dict(blast, prod, faa, phage)
+    blast_dict=set_up_blast_dict(blast, prod, faa, phage, cov_thresh=cov_thresh)
+    blast_db_function=db_dict[db]
+    for i in blast_dict.keys():
+        hit=blast_dict[i][0]
+        info=blast_db_function(hit)
+        blast_dict[i]+=info  
+    return blast_dict
+
+def enhanced_blast_dict(blast, prod, faa, db, phage, cov_thresh=75):
+    db_dict={"kegg":add_kegg_descript2, 
+         "egg":add_egg_descript2, 
+         "pog":add_pog_descript2}
+
+    blast_dict=set_up_blast_dict(blast, prod, faa, phage, cov_thresh=cov_thresh)
     blast_db_function=db_dict[db]
     for i in blast_dict.keys():
         hit=blast_dict[i][0]
@@ -166,7 +248,7 @@ def annotated_blast_dict(blast, prod, faa, db, phage):
     return blast_dict
 
 #load blast files for genome into dict of blast results 
-def load_blast_files(phage):
+def load_blast_files(phage, cov_thresh=75):
     prod=prod_path+phage+"gene"
     faa=faa_path+phage+"faa"
     pfam_blast=pfam_blast_path+phage+"vs.Pfam.out"
@@ -178,14 +260,14 @@ def load_blast_files(phage):
     egg_blast=egg_blast_path+phage+"vs.eggnog.out"
     pog_blast=pog_blast_path+phage+"vs.pog.out"
     
-    kegg_blast_dict=annotated_blast_dict(blast=kegg_blast, prod=prod, faa=faa, db="kegg", phage=phage)
-    pfam_blast_dict=annotated_blast_dict(blast=pfam_blast, prod=prod, faa=faa, db="pfam", phage=phage)
-    cog_blast_dict=annotated_blast_dict(blast=cog_blast, prod=prod, faa=faa, db="cog", phage=phage)
-    aclame_blast_dict=annotated_blast_dict(blast=aclame_blast, prod=prod, faa=faa, db="aclame", phage=phage)
-    cvp_blast_dict=annotated_blast_dict(blast=cvp_blast, prod=prod, faa=faa, db="cvp", phage=phage)
-    tara_blast_dict=annotated_blast_dict(blast=tara_blast, prod=prod, faa=faa, db="tara", phage=phage)
-    egg_blast_dict=annotated_blast_dict(blast=egg_blast, prod=prod, faa=faa, db="egg", phage=phage)
-    pog_blast_dict=annotated_blast_dict(blast=pog_blast, prod=prod, faa=faa, db="pog", phage=phage)
+    kegg_blast_dict=annotated_blast_dict(blast=kegg_blast, prod=prod, faa=faa, db="kegg", phage=phage, cov_thresh=cov_thresh)
+    pfam_blast_dict=annotated_blast_dict(blast=pfam_blast, prod=prod, faa=faa, db="pfam", phage=phage, cov_thresh=cov_thresh)
+    cog_blast_dict=annotated_blast_dict(blast=cog_blast, prod=prod, faa=faa, db="cog", phage=phage, cov_thresh=cov_thresh)
+    aclame_blast_dict=annotated_blast_dict(blast=aclame_blast, prod=prod, faa=faa, db="aclame", phage=phage, cov_thresh=cov_thresh)
+    cvp_blast_dict=annotated_blast_dict(blast=cvp_blast, prod=prod, faa=faa, db="cvp", phage=phage, cov_thresh=cov_thresh)
+    tara_blast_dict=annotated_blast_dict(blast=tara_blast, prod=prod, faa=faa, db="tara", phage=phage, cov_thresh=cov_thresh)
+    egg_blast_dict=annotated_blast_dict(blast=egg_blast, prod=prod, faa=faa, db="egg", phage=phage, cov_thresh=cov_thresh)
+    pog_blast_dict=annotated_blast_dict(blast=pog_blast, prod=prod, faa=faa, db="pog", phage=phage, cov_thresh=cov_thresh)
     
     blasts={"kegg":kegg_blast_dict, 
             "pfam":pfam_blast_dict, 
@@ -193,6 +275,23 @@ def load_blast_files(phage):
             "aclame":aclame_blast_dict,
             "cvp":cvp_blast_dict, 
             "tara":tara_blast_dict, 
+            "egg":egg_blast_dict, 
+            "pog":pog_blast_dict}
+    return blasts
+
+def load_kegg_egg_pog_blast(phage, cov_thresh=75):
+    prod=prod_path+phage+"gene"
+    faa=faa_path+phage+"faa"
+
+    kegg_blast=kegg_blast_path+phage+"vs.kegg.out"
+    egg_blast=egg_blast_path+phage+"vs.eggnog.out"
+    pog_blast=pog_blast_path+phage+"vs.pog.out"
+    
+    kegg_blast_dict=enhanced_blast_dict(blast=kegg_blast, prod=prod, faa=faa, db="kegg", phage=phage, cov_thresh=cov_thresh)
+    egg_blast_dict=enhanced_blast_dict(blast=egg_blast, prod=prod, faa=faa, db="egg", phage=phage, cov_thresh=cov_thresh)
+    pog_blast_dict=enhanced_blast_dict(blast=pog_blast, prod=prod, faa=faa, db="pog", phage=phage, cov_thresh=cov_thresh)
+    
+    blasts={"kegg":kegg_blast_dict, 
             "egg":egg_blast_dict, 
             "pog":pog_blast_dict}
     return blasts
