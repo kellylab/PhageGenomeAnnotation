@@ -14,10 +14,10 @@ phage_genomes=glob.glob("/nobackup1/jbrown/annotation/genomes/"+phage+"final.fas
 
 phages=[i.split("/")[-1].replace("final.fasta","") for i in phage_genomes]
 
-big=open("all_annotations.20151113.txt","w")
+#big=open("all_annotations.20151113.txt","w")
 
 for p in phages:
     write_gff3_file(p, "/nobackup1/jbrown/annotation/gff3/"+p+"annotations.gff3")
-    big.write(cds_blast_annotations_to_table(p))
-big.close()
+    #big.write(cds_blast_annotations_to_table(p))
+#big.close()
               

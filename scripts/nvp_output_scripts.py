@@ -284,10 +284,12 @@ def kegg_egg_pog_tbl(phage, cov_thresh=75):
     
     #write lines from prodigal files and blast dicts:
     for i in range(2,len(prod)-1,2):
+        #col1
         out+=Sequence+"\t"
         
         
         locus_tag=get_prod_cds_info(i, prod, digits, phage)[0]
+        #col2
         out+=locus_tag+"\t"
         
         #Add OG annotations:
@@ -300,4 +302,4 @@ def kegg_egg_pog_tbl(phage, cov_thresh=75):
                 out+="NA\t"*og_lens[ogs[d]]
         out+="\n"
 
-    return out
+    return out.replace("\t\n","\n")

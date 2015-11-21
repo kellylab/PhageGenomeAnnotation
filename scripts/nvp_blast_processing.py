@@ -23,6 +23,10 @@ def get_digits(faa):
     digits=len(str(faa.count(">")))
     return digits
 
+def strip_lines_list(inlist):
+    corrected=[i.replace("\n","") for i in inlist]
+    return corrected
+    
 #create locus tag from protein sequence name in BLAST output file:
 def get_locus_tag(line, digits, phage):
     query=line.split("\t")[0].split(" ")[0]
@@ -117,6 +121,21 @@ def query_phy_tbl(qid, tbl, db_location='/pool001/jbrown/blast_db.sqlite'):
     conn.close()
     return result
 
+##shorten excessively long protein descriptions:
+def reduce_func_len(function):
+    if len(function)>50:
+        if function.split(",")>1:
+            function=function.split(",")[0]
+        elif function.split(";")>1:
+            function=function.split(";")[0]
+        elif function.split(".")>1:
+            function=function.split(".")[0]
+        else:
+            function=function[0:50]
+    else:
+        function=function
+    return function
+
 ###find go and functional annotations based on BLAST identifier:
 def add_kegg_descript(hit):
     try:
@@ -134,9 +153,11 @@ def add_kegg_descript(hit):
                 ann=desc.split("\t")[1].split(";")[0].replace("\n","")
             except:
                 ann="none"
-        return [KEGG, ann]
     except:
-        return ["none", "none"]
+        ann="none"
+        KEGG="none"
+    ann=reduce_func_len(ann)
+    return strip_lines_list([KEGG, ann])
     
 def add_kegg_descript2(hit):
     try:
@@ -159,27 +180,35 @@ def add_kegg_descript2(hit):
             module=mod.split(":")[2].split("_")[-1].replace("\n","")
         except:
             module="none"
-        return [module, KEGG, ann]
+        
     except:
-        return ["none","none", "none"]
+        module="none"
+        KEGG="none"
+        ann="none"
+    ann=reduce_func_len(ann)
+    return strip_lines_list([module, KEGG, ann])
 
 def add_cog_descript(hit):
     cog=query_og1_tbl((hit.split("|")[1]),"cog1")
     func=query_og2_tbl(cog,"cog2").replace("\n","")
-    return [cog, func]
+    func=reduce_func_len(func)
+    return strip_lines_list([cog, func])
 
 def add_pfam_descript(hit):
     pfam=query_og1_tbl(hit,"pfam1").split(".")[0]
     function=query_og2_tbl(pfam, "pfam2").replace("\n","")
-    return [pfam, function]
+    function=reduce_func_len(function)
+    return strip_lines_list([pfam, function])
 
 def add_aclame_descript(hit):
     annotation=query_func_tbl(hit, "aclame")
-    return [hit, annotation]
+    annotation=reduce_func_len(annotation)
+    return strip_lines_list([hit, annotation])
 
 def add_cvp_descript(hit):
     func=query_func_tbl(hit, "cvp")
-    return [hit, func]
+    func=reduce_func_len(func)
+    return strip_lines_list([hit, func])
 
 def add_egg_descript(hit):
     try:
@@ -188,7 +217,8 @@ def add_egg_descript(hit):
     except:
         og="none"
         func="none"
-    return [og, func]
+    func=reduce_func_len(func)
+    return strip_lines_list([og, func])
 
 def add_egg_descript2(hit):
     try:
@@ -199,22 +229,25 @@ def add_egg_descript2(hit):
         og="none"
         func="none"
         cat="none"
-    return [cat, og, func]
+    func=reduce_func_len(func)
+    return strip_lines_list([cat, og, func])
 
 def add_tara_descript(hit):   #right now just adding the closest hit, TARA sequences come with COG/Pfam info etc 
-    return [hit, hit]
+    return strip_lines_list([hit, hit])
 
 def add_pog_descript(hit):
     og=query_og1_tbl(hit.split("|")[1], "pog")
     function=query_og2_tbl(og, "pog")
-    return [og, function]
+    function=reduce_func_len(function)
+    return strip_lines_list([og, function])
 
 def add_pog_descript2(hit):
     og=query_og1_tbl(hit.split("|")[1], "pog")
     function=query_og2_tbl(og, "pog")
+    function=reduce_func_len(function)
     phylog=query_phy_tbl(hit.split("|")[1],"pog")
     phylist=[i.split("]")[-1] for i in phylog]
-    return [og, function]+phylist
+    return strip_lines_list([og, function]+phylist)
     
 def annotated_blast_dict(blast, prod, faa, db, phage, cov_thresh=75):
     db_dict={"kegg":add_kegg_descript, 
