@@ -27,13 +27,17 @@ def ublast_udbs(faa, outdir, udbs=[kegg_udb, eggnog_udb, pfam_udb]):
     blast_files = []
     for d in udbs:
         #TO DO: TEST THE BELOW COMMAND:
-        out = op.join(outdir, "%s_vs_%s.out" % (op.basename(faa).splittext(base), op.basename(d).split(".")[0]))
+        out = op.join(outdir, "%s_vs_%s.out" % (op.basename(faa).replace(".faa",""), op.basename(d).split(".")[0]))
         if op.exists(out):
             blast_files.append(out)
         else:
         	run_ublastp(faa, out, d)
         	blast_files.append(out)
     return blast_files
+    
+def strip_lines_list(inlist):
+    corrected=[i.replace("\n","") for i in inlist]
+    return corrected
 
 def read_fasta(file_handle):
     '''fasta generator'''
@@ -45,11 +49,12 @@ def read_fasta(file_handle):
             seq = ''.join(line.strip() for line in group)
             yield name, seq
             
-def get_prot_lens(faa_file, phage):
+def get_prot_lens(faa_file):
     len_dict = {}
     with open(faa_file) as infile:
         for name, seq in read_fasta(infile):
-            len_dict[name] = len(seq)
+            nameshort = name.split(" ")[0]
+            len_dict[nameshort] = len(seq)
     return len_dict
     
 #set up dict of general info from BLAST:
@@ -62,25 +67,25 @@ def set_up_blast_dict(blast, faa, cov_thresh = 75):
         blast dictionary with sequence name as key, value of [hit, pct_coverage, pct_id, evalue]
     '''
 
-    len_dict = get_prot_lens(faa, phage)
+    len_dict = get_prot_lens(faa)
     records = []
     blast_dict = {}
-    try:
-        with open(blast) as infile:
-			for line in infile:
-				name = line.split(" ")[0]
-				hit = line.split("\t")[1]	
-				lt = name    
-				prot_len = len_dict[lt]
-				aln_len = int(line.split("\t")[3])
-				pct_id = float(line.split("\t")[2])
-				ev = line.split("\t")[-2]
-				pct_cov = (aln_len/prot_len)*100
-				if pct_id > 35 and pct_cov > cov_thresh and lt not in records:
-					records.append(lt)
-					blast_dict[lt] = [hit, pct_cov, pct_id, ev]
-    except:
-        print "could not open %s" %blast
+    #try:
+    with open(blast) as infile:
+        for line in infile:
+            name = line.split(" ")[0]
+            hit = line.split("\t")[1]   
+            lt = name    
+            prot_len = len_dict[lt]
+            aln_len = int(line.split("\t")[3])
+            pct_id = float(line.split("\t")[2])
+            ev = line.split("\t")[-2]
+            pct_cov = (aln_len/prot_len)*100
+            if pct_id > 35 and pct_cov > cov_thresh and lt not in records:
+                records.append(lt)
+                blast_dict[lt] = [hit, pct_cov, pct_id, ev]
+    #except:
+    #    print("could not open %s" % blast)
     return blast_dict
 
 
@@ -306,7 +311,7 @@ def load_kegg_egg_pfam_blast(blast_list, faa, cov_thresh=75):
     pfam_blast = blast_list[2]
     kegg_blast_dict = enhanced_blast_dict(blast=kegg_blast, faa=faa, db="kegg", cov_thresh=cov_thresh)
     egg_blast_dict = enhanced_blast_dict(blast=egg_blast, faa=faa, db="egg", cov_thresh=cov_thresh)
-    pog_blast_dict = enhanced_blast_dict(blast=pfam_blast, faa=faa, db="pfam", cov_thresh=cov_thresh)
+    pfam_blast_dict = enhanced_blast_dict(blast=pfam_blast, faa=faa, db="pfam", cov_thresh=cov_thresh)
     blasts={"kegg":kegg_blast_dict, 
             "egg":egg_blast_dict, 
             "pfam":pfam_blast_dict}
