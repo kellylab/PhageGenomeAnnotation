@@ -15,7 +15,7 @@ import subprocess
 
 pfam_udb = "/nobackup1/jbrown/annotation/databases/Pfam.udb"
 eggnog_udb = "/nobackup1/jbrown/annotation/databases/eggnog4.udb"
-kegg_udb = "/nobackup1/jbrown/annotation/databases/kegg_reduced.fasta"
+kegg_udb = "/nobackup1/jbrown/annotation/databases/kegg.reduced.fasta"
 
 def run_ublastp(fastafile, out, udb, evalue=1e-5):
     to_run="/home/sbiller/usearch7.0.1090_i86linux64 -ublast %s -db %s -evalue %s -accel 0.5 -strand plus -blast6out %s" % (fastafile, udb, evalue, out)
@@ -26,7 +26,8 @@ udbs = [kegg_udb, eggnog_udb, pfam_udb]
 def ublast_udbs(faa, outdir, udbs=[kegg_udb, eggnog_udb, pfam_udb]):
     blast_files = []
     for d in udbs:
-        out = op.join(outdir, "%s_vs_%s.out" % (op.basename(faa).split(".")[0], op.basename(d).split(".")[0]))
+        #TO DO: TEST THE BELOW COMMAND:
+        out = op.join(outdir, "%s_vs_%s.out" % (op.basename(faa).splittext(base), op.basename(d).split(".")[0]))
         if op.exists(out):
             blast_files.append(out)
         else:
