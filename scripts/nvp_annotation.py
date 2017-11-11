@@ -2,7 +2,7 @@ from __future__ import print_function
 
 from phage_ublast import run_ublasts
 from phage_prodigal import run_prodigals
-from phage_trnascan import run_trnas, prep_outdir
+from phage_trnascan import run_trna_scans, prep_outdir
 from phage_crt import run_crts
 from nvp_output_scripts import write_gff3_file
 
@@ -39,7 +39,7 @@ def run_all(phage_list, genome_dir, outdir, blast_databasedir, ublast_path='/hom
 
     trna_dir = op.join(outdir, 'trna')
     print("Running trna scan now")
-    trna_dir = run_trnas(phage_list, trna_dir, genome_dir)
+    trna_dir = run_trna_scans(phage_list, trna_dir, genome_dir)
 
     crt_dir = op.join(outdir, 'crt')
     print("Looking for CRISPRs using crt")
@@ -70,7 +70,7 @@ def run_all(phage_list, genome_dir, outdir, blast_databasedir, ublast_path='/hom
 
     trna_dir = op.join(outdir, 'trna')
     print("Running trna scan now")
-    trna_dir = run_trnas(phage_list, trna_dir, genome_dir)
+    trna_dir = run_trna_scans(phage_list, trna_dir, genome_dir)
 
     crt_dir = op.join(outdir, 'crt')
     print("Looking for CRISPRs using crt")
