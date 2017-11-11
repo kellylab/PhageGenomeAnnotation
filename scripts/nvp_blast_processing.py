@@ -1,13 +1,16 @@
 #!usr/bin/python
 from __future__ import division
+from __future__ import print_function
 from pyfaidx import Fasta
 import re
+import os.path as op
+import glob
 
 
 #paths
 prod_path="/nobackup1/jbrown/annotation/genes/"
 faa_path="/nobackup1/jbrown/annotation/proteins/"
-    
+
 pfam_blast_path="/nobackup1/jbrown/annotation/blasts/Pfam/"
 cog_blast_path="/nobackup1/jbrown/annotation/blasts/cogs_2003-2014/"
 aclame_blast_path="/nobackup1/jbrown/annotation/blasts/aclame/"
@@ -17,6 +20,10 @@ tara_blast_path="/nobackup1/jbrown/annotation/blasts/tara.translated/"
 egg_blast_path="/nobackup1/jbrown/annotation/blasts/eggnog/"
 pog_blast_path="/nobackup1/jbrown/annotation/blasts/pog/"
 
+def get_blast_paths(blastdir):
+    '''returns [aclame_blast_path, cog_blast_path, cvp_blast_path, eggnog_blast_path, pfam_blast_path, pog_blast_path, tara_blast_path, keg_blast_path]'''
+    dbnames=["aclame","cogs_2003-2004","CVP","eggnog","Pfam","pog","tara.translated","kegg"]
+    return [op.join(blastdir, i) for i in dbnames]
 
 def get_digits(faa):
     faa=open(faa).read()
@@ -26,7 +33,7 @@ def get_digits(faa):
 def strip_lines_list(inlist):
     corrected=[i.replace("\n","") for i in inlist]
     return corrected
-    
+
 #create locus tag from protein sequence name in BLAST output file:
 def get_locus_tag(line, digits, phage):
     query=line.split("\t")[0].split(" ")[0]
@@ -52,21 +59,23 @@ def set_up_blast_dict(blast, prod, faa, phage, cov_thresh=75):
     records=[]
     blast_dict={}
     try:
-        blast=open(blast).readlines()
-        for line in blast:
-            name=line.split(" ")[0]
-            hit=line.split("\t")[1]
-            lt=get_locus_tag(name, digits=digits, phage=phage)
-            prot_len=len_dict[lt]
-            aln_len=int(line.split("\t")[3])
-            pct_id=float(line.split("\t")[2])
-            ev=line.split("\t")[-2]
-            pct_cov=(aln_len/prot_len)*100
-            if pct_id>35 and pct_cov>cov_thresh and lt not in records:
-                records.append(lt)
-                blast_dict[lt]=[hit, pct_cov, pct_id, ev]
-    except:
-        print "could not open %s" %blast
+        with open(blast) as ih:
+            blast=ih.readlines()
+            for line in blast:
+                name=line.split(" ")[0]
+                hit=line.split("\t")[1]
+                lt=get_locus_tag(name, digits=digits, phage=phage)
+                prot_len=len_dict[lt]
+                aln_len=int(line.split("\t")[3])
+                pct_id=float(line.split("\t")[2])
+                ev=line.split("\t")[-2]
+                pct_cov=(aln_len/prot_len)*100
+                if pct_id>35 and pct_cov>cov_thresh and lt not in records:
+                    records.append(lt)
+                    blast_dict[lt]=[hit, pct_cov, pct_id, ev]
+    except Exception as inst:
+        print("could not open %s" %blast)
+        print(inst)
     return blast_dict
 
 #functions for adding annotations/info to BLAST hit based on BLAST database
@@ -158,7 +167,7 @@ def add_kegg_descript(hit):
         KEGG="none"
     ann=reduce_func_len(ann)
     return strip_lines_list([KEGG, ann])
-    
+
 def add_kegg_descript2(hit):
     try:
         desc= REST.kegg_find("genes", hit).read()
@@ -180,7 +189,7 @@ def add_kegg_descript2(hit):
             module=mod.split(":")[2].split("_")[-1].replace("\n","")
         except:
             module="none"
-        
+
     except:
         module="none"
         KEGG="none"
@@ -232,7 +241,7 @@ def add_egg_descript2(hit):
     func=reduce_func_len(func)
     return strip_lines_list([cat, og, func])
 
-def add_tara_descript(hit):   #right now just adding the closest hit, TARA sequences come with COG/Pfam info etc 
+def add_tara_descript(hit):   #right now just adding the closest hit, TARA sequences come with COG/Pfam info etc
     return strip_lines_list([hit, hit])
 
 def add_pog_descript(hit):
@@ -248,15 +257,15 @@ def add_pog_descript2(hit):
     phylog=query_phy_tbl(hit.split("|")[1],"pog")
     phylist=[i.split("]")[-1] for i in phylog]
     return strip_lines_list([og, function]+phylist)
-    
+
 def annotated_blast_dict(blast, prod, faa, db, phage, cov_thresh=75):
-    db_dict={"kegg":add_kegg_descript, 
-         "cog":add_cog_descript, 
-         "pfam":add_pfam_descript, 
+    db_dict={"kegg":add_kegg_descript,
+         "cog":add_cog_descript,
+         "pfam":add_pfam_descript,
          "aclame":add_aclame_descript,
-         "cvp":add_cvp_descript, 
-         "tara":add_tara_descript, 
-         "egg":add_egg_descript, 
+         "cvp":add_cvp_descript,
+         "tara":add_tara_descript,
+         "egg":add_egg_descript,
          "pog":add_pog_descript}
 
     blast_dict=set_up_blast_dict(blast, prod, faa, phage, cov_thresh=cov_thresh)
@@ -264,12 +273,12 @@ def annotated_blast_dict(blast, prod, faa, db, phage, cov_thresh=75):
     for i in blast_dict.keys():
         hit=blast_dict[i][0]
         info=blast_db_function(hit)
-        blast_dict[i]+=info  
+        blast_dict[i]+=info
     return blast_dict
 
 def enhanced_blast_dict(blast, prod, faa, db, phage, cov_thresh=75):
-    db_dict={"kegg":add_kegg_descript2, 
-         "egg":add_egg_descript2, 
+    db_dict={"kegg":add_kegg_descript2,
+         "egg":add_egg_descript2,
          "pog":add_pog_descript2}
 
     blast_dict=set_up_blast_dict(blast, prod, faa, phage, cov_thresh=cov_thresh)
@@ -277,22 +286,32 @@ def enhanced_blast_dict(blast, prod, faa, db, phage, cov_thresh=75):
     for i in blast_dict.keys():
         hit=blast_dict[i][0]
         info=blast_db_function(hit)
-        blast_dict[i]+=info  
+        blast_dict[i]+=info
     return blast_dict
 
-#load blast files for genome into dict of blast results 
-def load_blast_files(phage, cov_thresh=75):
-    prod=prod_path+phage+"gene"
-    faa=faa_path+phage+"faa"
-    pfam_blast=pfam_blast_path+phage+"vs.Pfam.out"
-    cog_blast=cog_blast_path+phage+"vs.cogs_2003-2014.out"
-    aclame_blast=aclame_blast_path+phage+"vs.aclame.out"
-    cvp_blast=cvp_blast_path+phage+"vs.CVP.out"
-    kegg_blast=kegg_blast_path+phage+"vs.kegg.out"
-    tara_blast=tara_blast_path+phage+"vs.tara.translated.out"
-    egg_blast=egg_blast_path+phage+"vs.eggnog.out"
-    pog_blast=pog_blast_path+phage+"vs.pog.out"
-    
+#load blast files for genome into dict of blast results
+def load_blast_files(phage, prod_path, faa_path, blast_path, cov_thresh=75):
+    '''
+    >> load_blast_files('1.028.O', '/nobackup1/jbrown/newmu/genes/', '/nobackup1/jbrown/newmu/proteins/', '/nobackup1/jbrown/newmu/blast/')
+    could not open /nobackup1/jbrown/newmu/blasts/Pfam/2.159.B.vs.pfam.out
+    could not open /nobackup1/jbrown/newmu/blasts/cogs_2003-2004/2.159.B.vs.cogs_2003-2014.out
+                   blast = '/nobackup1/jbrown/newmu/blasts/cogs_2003-2004/2.159.B.vs.cogs_2003-2004.out'
+    '''
+    prod=op.join(prod_path,phage+".gene")
+    faa=glob.glob(op.join(faa_path,phage+"*.f*a"))[0]
+    print("using {} as the protein file".format(faa))
+
+    [aclame_blast_path, cog_blast_path, cvp_blast_path, eggnog_blast_path, pfam_blast_path, pog_blast_path, tara_blast_path, keg_blast_path] = get_blast_paths(blast_path)
+
+    cog_blast=op.join(cog_blast_path,phage+".vs.cogs_2003-2004.out")
+    aclame_blast=op.join(aclame_blast_path,phage+".vs.aclame.out")
+    cvp_blast=op.join(cvp_blast_path,phage+".vs.CVP.out")
+    kegg_blast=op.join(kegg_blast_path,phage+".vs.kegg.out")
+    tara_blast=op.join(tara_blast_path,phage+".vs.tara.translated.out")
+    egg_blast=op.join(egg_blast_path,phage+".vs.eggnog.out")
+    pog_blast=op.join(pog_blast_path,phage+".vs.pog.out")
+    pfam_blast = op.join(pfam_blast_path, phage+".vs.Pfam.out")
+
     kegg_blast_dict=annotated_blast_dict(blast=kegg_blast, prod=prod, faa=faa, db="kegg", phage=phage, cov_thresh=cov_thresh)
     pfam_blast_dict=annotated_blast_dict(blast=pfam_blast, prod=prod, faa=faa, db="pfam", phage=phage, cov_thresh=cov_thresh)
     cog_blast_dict=annotated_blast_dict(blast=cog_blast, prod=prod, faa=faa, db="cog", phage=phage, cov_thresh=cov_thresh)
@@ -301,30 +320,32 @@ def load_blast_files(phage, cov_thresh=75):
     tara_blast_dict=annotated_blast_dict(blast=tara_blast, prod=prod, faa=faa, db="tara", phage=phage, cov_thresh=cov_thresh)
     egg_blast_dict=annotated_blast_dict(blast=egg_blast, prod=prod, faa=faa, db="egg", phage=phage, cov_thresh=cov_thresh)
     pog_blast_dict=annotated_blast_dict(blast=pog_blast, prod=prod, faa=faa, db="pog", phage=phage, cov_thresh=cov_thresh)
-    
-    blasts={"kegg":kegg_blast_dict, 
-            "pfam":pfam_blast_dict, 
-            "cog":cog_blast_dict, 
+
+    blasts={"kegg":kegg_blast_dict,
+            "pfam":pfam_blast_dict,
+            "cog":cog_blast_dict,
             "aclame":aclame_blast_dict,
-            "cvp":cvp_blast_dict, 
-            "tara":tara_blast_dict, 
-            "egg":egg_blast_dict, 
+            "cvp":cvp_blast_dict,
+            "tara":tara_blast_dict,
+            "egg":egg_blast_dict,
             "pog":pog_blast_dict}
     return blasts
 
 def load_kegg_egg_pog_blast(phage, cov_thresh=75):
-    prod=prod_path+phage+"gene"
-    faa=faa_path+phage+"faa"
+    prod=op.join(prod_path,phage+".gene")
+    faa=op.join(faa_path,phage+".faa")
+
+    [aclame_blast_path, cog_blast_path, cvp_blast_path, eggnog_blast_path, pfam_blast_path, pog_blast_path, tara_blast_path, keg_blast_path] = get_blast_paths(blast_path)
 
     kegg_blast=kegg_blast_path+phage+"vs.kegg.out"
     egg_blast=egg_blast_path+phage+"vs.eggnog.out"
     pog_blast=pog_blast_path+phage+"vs.pog.out"
-    
+
     kegg_blast_dict=enhanced_blast_dict(blast=kegg_blast, prod=prod, faa=faa, db="kegg", phage=phage, cov_thresh=cov_thresh)
     egg_blast_dict=enhanced_blast_dict(blast=egg_blast, prod=prod, faa=faa, db="egg", phage=phage, cov_thresh=cov_thresh)
     pog_blast_dict=enhanced_blast_dict(blast=pog_blast, prod=prod, faa=faa, db="pog", phage=phage, cov_thresh=cov_thresh)
-    
-    blasts={"kegg":kegg_blast_dict, 
-            "egg":egg_blast_dict, 
+
+    blasts={"kegg":kegg_blast_dict,
+            "egg":egg_blast_dict,
             "pog":pog_blast_dict}
     return blasts
