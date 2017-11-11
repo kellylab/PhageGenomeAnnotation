@@ -62,7 +62,7 @@ def run_all(phage_list, genome_dir, outdir, blast_databasedir, ublast_path, ubla
 @click.option('--ublast_evalue', help='evalue to use for ublast', default='1e-5')
 @click.option('--path-to-crt', help='location of crt executable', default="/home/jbrown/programs/CRT1.2-CLI.jar")
 def run_all(phage_list, genome_dir, outdir, blast_databasedir, ublast_path, ublast_evalue):
-    fastas = glob.glob(op.join(proteindir, "*.f*a"))
+    fastas = glob.glob(op.join(genome_dir, "*.f*a"))
     phage_list = [".".join(op.basename(i).split(".")[:3])+"." for i in fastas]
 
     print("Running prodigal now")
@@ -95,7 +95,7 @@ def write_from_genomedir(genome_dir, outdir):
 
     for i in [blast_dir, trna_dir, crt_dir]: assert op.exists(i), "Please make sure that {i} exists with a result per genome".format(i=i)
 
-    fastas = glob.glob(op.join(proteindir, "*.f*a"))
+    fastas = glob.glob(op.join(genome_dir, "*.f*a"))
     phage_list = [".".join(op.basename(i).split(".")[:3])+"." for i in fastas]
 
     gff_dir = op.join(outdir, 'gff3')
