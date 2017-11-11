@@ -92,7 +92,7 @@ def write_from_genomedir(genome_dir, outdir):
     blast_dir = op.join(outdir, "blasts")
     trna_dir = op.join(outdir, 'trna')
     crt_dir = op.join(outdir, 'crt')
-    prd_dir = op.join(outdir, 'genes')
+    prod_dir = op.join(outdir, 'genes')
 
     for i in [blast_dir, trna_dir, crt_dir]: assert op.exists(i), "Please make sure that {i} exists with a result per genome".format(i=i)
 
