@@ -94,6 +94,9 @@ def write_from_genomedir(genome_dir, outdir):
 
     for i in [blast_dir, trna_dir, crt_dir]: assert op.exists(i), "Please make sure that {i} exists with a result per genome".format(i=i)
 
+    fastas = glob.glob(op.join(proteindir, "*.f*a"))
+    phage_list = [".".join(op.basename(i).split(".")[:3])+"." for i in fastas]
+
     gff_dir = op.join(outdir, 'gff3')
 
     print("Writing results to gff3")
