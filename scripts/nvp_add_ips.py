@@ -97,7 +97,7 @@ def combine_ips_gff3(ips, gff3, outfile):
                 line = GffLine(l)
                 if line.key in ipsdict.keys():
                     line.change_desc(ipsdict[line.key][0])
-                    line.notes += '; ontology_term="InterPro:{ips}"'.format(ips=ipsdict[line.key][-1])
+                    line.notes += '; note="InterPro:{ips}"'.format(ips=ipsdict[line.key][-1])
                 print(line.print_line(), file=oh)
             else:
                 print(l, file=oh)
@@ -114,6 +114,7 @@ def merge_gff3_and_ips(ips_dir, gff3_dir, outdir):
         print("merging {} and {} into {} for phage {}".format(ips, gff, out_gff, phage))
         combine_ips_gff3(ips, gff, out_gff)
     print("done!")
+
 
 @cli.command("merge-dirs", short_help="merge gff and ips tsv outputs for nvp collection")
 @click.option('--ips-dir', help="directory containing interproscan tsv results")

@@ -8,6 +8,7 @@ from phage_ublast import run_ublasts
 from phage_prodigal import run_prodigals
 from phage_trnascan import run_trna_scans, prep_outdir
 from phage_crt import run_crts
+from nvp_add_ips import merge_gff3_and_ips
 from nvp_output_scripts import write_gff3_file
 
 @click.group(context_settings=dict(help_option_names=['-h', '--help']))
@@ -89,14 +90,27 @@ def run_all(phage_list, genome_dir, outdir, blast_databasedir, ublast_path, ubla
 @cli.command("write-gff3s", short_help='write gff3 files given all appropriate input directories')
 @click.option("--genome-dir", help="location of genomic contigs in fasta format")
 @click.option("--outdir", help="parent directory of all other results directories, assumes that trnascan, crt and blasts have already been run and have default naming structure")
-def write_from_genomedir(genome_dir, outdir):
-    blast_dir = op.join(outdir, "blasts")
-    trna_dir = op.join(outdir, 'trna')
-    crt_dir = op.join(outdir, 'crt')
-    prod_dir = op.join(outdir, 'genes')
-    prot_dir = op.join(outdir, 'proteins')
+@click.option("--ips-dir", help="interproscan results location", default=None)
+@click.option("--blast-dir", help="location of blast outputs for annotation", default=None)
+@click.option("--trna-dir", help="location of trnascan results if not in outdir", default=None)
+@click.option("--crt-dir", help="location of crt results if not in outdir", default=None)
+@click.option("--prod-dir", help="location of prodigal .gff files if not in outdir", default=None)
+@click.option("--prot-dir", help="location of translated orfs if not in outdir", default=None)
+def write_from_genomedir(genome_dir, outdir, ips_dir, blast_dir, trna_dir, crt_dir, prod_dir, prot_dir):
+    '''
+    nvp_annotations.py write-gff3s --genome-dir /nobackup1/jbrown/nvp_for_ncbi/genomes/ --outdir /nobackup1/jbrown/nvp_for_ncbi/ \
+    --ips-dir /nobackup1/jbrown/annotation/protein_ips_calls/ --blast-dir /nobackup1/jbrown/annotation/blasts/ \
+    --trna-dir /nobackup1/jbrown/annotation/trna --crt-dir /nobackup1/jbrown/annotation/crt/ \
+    --prod-dir /nobackup1/jbrown/annotation/genes/ --prot-dir /nobackup1/jbrown/annotation/proteins/
+    '''
 
-    for i in [blast_dir, trna_dir, crt_dir]: assert op.exists(i), "Please make sure that {i} exists with a result per genome".format(i=i)
+    if blast_dir is None: blast_dir = op.join(outdir, "blasts")
+    if trna_dir is None: trna_dir = op.join(outdir, 'trna')
+    if crt_dir is None: crt_dir = op.join(outdir, 'crt')
+    if prod_dir is None: prod_dir = op.join(outdir, 'genes')
+    if prot_dir is None: prot_dir = op.join(outdir, 'proteins')
+
+    for i in [blast_dir, trna_dir, crt_dir, prod_dir, prot_dir]: assert op.exists(i), "Please make sure that {i} exists with a result per genome".format(i=i)
 
     fastas = glob.glob(op.join(genome_dir, "*.f*a"))
     phage_list = [".".join(op.basename(i).split(".")[:3]) for i in fastas]
@@ -105,7 +119,11 @@ def write_from_genomedir(genome_dir, outdir):
 
     print("Writing results to gff3")
     gff_dir = write_gff3s(phage_list, gff_dir, prod_dir, prot_dir, genome_dir, blast_dir, trna_dir, crt_dir, cov_threshold=75)
-    print('Done!')
+
+    if ips_dir is not None:
+        ips_merge_out = op.join(outdir, 'gff_ips_added')
+        prep_outdir(ips_merge_out)
+        merge_gff3_and_ips(ips_dir, gff_dir, ips_merge_out)
 
 if __name__ == '__main__':
     cli()

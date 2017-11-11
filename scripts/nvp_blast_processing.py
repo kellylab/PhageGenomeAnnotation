@@ -6,7 +6,10 @@ import re
 import os.path as op
 import glob
 
-
+'''
+dependent upon sqlite database containing annotations for OG and general identifiers for
+OG and other databases used for annotation.  sqlite table located at: '/pool001/jbrown/blast_db.sqlite'
+'''
 #paths
 prod_path="/nobackup1/jbrown/annotation/genes/"
 faa_path="/nobackup1/jbrown/annotation/proteins/"
