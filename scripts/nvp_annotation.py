@@ -23,7 +23,7 @@ def write_gff3s(phage_list, output_dir, prod_dir, prot_dir, genome_dir, blast_di
         output_file = op.join(output_dir, '{}.gff3'.format(phage))
         # write_gff3_file(phage, output_file, prod_path, faa_path, genome_path, blast_path, trna_path, crt_path, cov_thresh=75):
         write_gff3_file(phage, output_file, prod_dir, prot_dir, genome_dir, blast_dir, trna_dir, crt_dir, cov_thresh=75)
-    return outdir
+    return output_dir
 
 
 @cli.command("phage-list-runall", short_help="provide space separated list of phages to blast")
