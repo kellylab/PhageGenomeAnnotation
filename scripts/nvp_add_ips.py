@@ -84,7 +84,7 @@ class GffLine():
 
 def find_file_matches(ipslist, gfflist):
     for i in ipslist:
-        phage = ".".join(op.basename(i).split(".")[:3]
+        phage = ".".join(op.basename(i).split(".")[:3])
         ann = [j for j in gfflist if phage in j][0]
         yield phage, i, ann
 
@@ -124,4 +124,3 @@ def merge_dirs(ips_dir, gff3_dir, outdir):
 
 if __name__ == '__main__':
     cli()
-    
