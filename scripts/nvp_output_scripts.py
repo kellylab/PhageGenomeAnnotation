@@ -182,6 +182,8 @@ def write_gff3_file(phage, output_file, prod_path, faa_path, genome_path, blast_
     >>crt_path = "/nobackup1/jbrown/newmu/crt/"
     >> write_gff3_file('1.028.O', output_file, prod_path, faa_path, genome_path, blast_path, trna_path, crt_path, cov_thresh=75)
     '''
+    print("prod dir: {}".format(prod_path))
+    print("looking for: {}".format(op.join(prod_path,phage + "*.gen*")))
     prod=glob.glob(op.join(prod_path,phage + "*.gen*"))[0]
     faa=glob.glob(op.join(faa_path, phage+"*.f*a"))[0]
     genomic_fasta=op.join(genome_path, "%s.final.fasta" % phage)
