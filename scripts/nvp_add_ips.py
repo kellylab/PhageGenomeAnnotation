@@ -107,7 +107,7 @@ def merge_gff3_and_ips(ips_dir, gff3_dir, outdir):
         os.mkdir(outdir)
 
     ips_list = glob.glob(op.join(ips_dir, "*.tsv"))
-    gff_list = glob.glob(op.join(gff3.dir, *))
+    gff_list = glob.glob(op.join(gff3_dir, "*"))
 
     for phage, ips, gff in find_file_matches(ipslist, gfflist):
         out_gff = op.join(outdir, "{}_ips.gff3".format(phage))
