@@ -32,13 +32,13 @@ def write_gff3s(phage_list, output_dir, prod_dir, prot_dir, genome_dir, blast_di
 @click.option('--ublast_path', help="where ublast executable found", default='/home/sbiller/usearch7.0.1090_i86linux64')
 @click.option('--ublast_evalue', help='evalue to use for ublast', default='1e-5')
 @click.option('--path-to-crt', help='location of crt executable', default="/home/jbrown/programs/CRT1.2-CLI.jar")
-def run_all(phage_list, genome_dir, outdir, blast_databasedir, ublast_path='/home/sbiller/usearch7.0.1090_i86linux64', blast_evalue=blast_evalue):
+def run_all(phage_list, genome_dir, outdir, blast_databasedir, ublast_path, ublast_evalue):
     print("Running prodigal now")
     prod_dir, prot_dir, fna_dir = run_prodigals(phage_list, outdir, genome_dir)
 
     blast_dir = op.join(outdir, "blasts")
     print("Running blasts now")
-    blast_dir = run_ublasts(phage_list, blast_dir, blast_databasedir, prot_dir, ublast_path, blast_evalue)
+    blast_dir = run_ublasts(phage_list, blast_dir, blast_databasedir, prot_dir, ublast_path, ublast_evalue)
 
     trna_dir = op.join(outdir, 'trna')
     print("Running trna scan now")
@@ -60,7 +60,7 @@ def run_all(phage_list, genome_dir, outdir, blast_databasedir, ublast_path='/hom
 @click.option('--ublast_path', help="where ublast executable found", default='/home/sbiller/usearch7.0.1090_i86linux64')
 @click.option('--ublast_evalue', help='evalue to use for ublast', default='1e-5')
 @click.option('--path-to-crt', help='location of crt executable', default="/home/jbrown/programs/CRT1.2-CLI.jar")
-def run_all(phage_list, genome_dir, outdir, blast_databasedir, ublast_path='/home/sbiller/usearch7.0.1090_i86linux64', blast_evalue=blast_evalue):
+def run_all(phage_list, genome_dir, outdir, blast_databasedir, ublast_path, ublast_evalue):
     fastas = glob.glob(op.join(proteindir, "*.f*a"))
     phage_list = [".".join(op.basename(i).split(".")[:3])+"." for i in fastas]
 
@@ -69,7 +69,7 @@ def run_all(phage_list, genome_dir, outdir, blast_databasedir, ublast_path='/hom
 
     blast_dir = op.join(outdir, "blasts")
     print("Running blasts now")
-    blast_dir = run_ublasts(phage_list, blast_dir, blast_databasedir, prot_dir, ublast_path, blast_evalue)
+    blast_dir = run_ublasts(phage_list, blast_dir, blast_databasedir, prot_dir, ublast_path, ublast_evalue)
 
     trna_dir = op.join(outdir, 'trna')
     print("Running trna scan now")
