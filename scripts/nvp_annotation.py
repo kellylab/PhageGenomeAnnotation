@@ -21,6 +21,7 @@ def write_gff3s(phage_list, output_dir, prod_dir, prot_dir, genome_dir, blast_di
     prep_outdir(output_dir)
     for phage in phage_list:
         output_file = op.join(output_dir, '{}.gff3'.format(phage))
+        # write_gff3_file(phage, output_file, prod_path, faa_path, genome_path, blast_path, trna_path, crt_path, cov_thresh=75):
         write_gff3_file(phage, output_file, prod_dir, prot_dir, genome_dir, blast_dir, trna_dir, crt_dir, cov_thresh=75)
     return outdir
 
@@ -63,7 +64,7 @@ def run_all(phage_list, genome_dir, outdir, blast_databasedir, ublast_path, ubla
 @click.option('--path-to-crt', help='location of crt executable', default="/home/jbrown/programs/CRT1.2-CLI.jar")
 def run_all(phage_list, genome_dir, outdir, blast_databasedir, ublast_path, ublast_evalue):
     fastas = glob.glob(op.join(genome_dir, "*.f*a"))
-    phage_list = [".".join(op.basename(i).split(".")[:3])+"." for i in fastas]
+    phage_list = [".".join(op.basename(i).split(".")[:3]) for i in fastas]
 
     print("Running prodigal now")
     prod_dir, prot_dir, fna_dir = run_prodigals(phage_list, outdir, genome_dir)
@@ -98,7 +99,7 @@ def write_from_genomedir(genome_dir, outdir):
     for i in [blast_dir, trna_dir, crt_dir]: assert op.exists(i), "Please make sure that {i} exists with a result per genome".format(i=i)
 
     fastas = glob.glob(op.join(genome_dir, "*.f*a"))
-    phage_list = [".".join(op.basename(i).split(".")[:3])+"." for i in fastas]
+    phage_list = [".".join(op.basename(i).split(".")[:3]) for i in fastas]
 
     gff_dir = op.join(outdir, 'gff3')
 
