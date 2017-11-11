@@ -4,7 +4,6 @@ import subprocess
 import glob
 import os
 import os.path as op
-import sys
 import click
 
 '''

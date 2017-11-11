@@ -4,7 +4,6 @@ import subprocess
 import glob
 import os
 import os.path as op
-import sys
 import click
 
 @click.group(context_settings=dict(help_option_names=['-h', '--help']))
