@@ -38,7 +38,7 @@ def run_all(phage_list, genome_dir, outdir, blast_databasedir, ublast_path='/hom
 
     blast_dir = op.join(outdir, "blasts")
     print("Running blasts now")
-    blast_dir = run_ublasts(phage_list, blast_dir, blast_databasedir, prot_dir, ublast_path, ublast_evalue)
+    blast_dir = run_ublasts(phage_list, blast_dir, blast_databasedir, prot_dir, ublast_path, blast_evalue)
 
     trna_dir = op.join(outdir, 'trna')
     print("Running trna scan now")
@@ -69,7 +69,7 @@ def run_all(phage_list, genome_dir, outdir, blast_databasedir, ublast_path='/hom
 
     blast_dir = op.join(outdir, "blasts")
     print("Running blasts now")
-    blast_dir = run_ublasts(phage_list, blast_dir, blast_databasedir, prot_dir, ublast_path, ublast_evalue)
+    blast_dir = run_ublasts(phage_list, blast_dir, blast_databasedir, prot_dir, ublast_path, blast_evalue)
 
     trna_dir = op.join(outdir, 'trna')
     print("Running trna scan now")
