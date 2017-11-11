@@ -23,15 +23,16 @@ def split_fasta(number_files, fasta_file):
     ranges[-1]=number_seqs
     print(ranges)
 
-    
+
     for i in range(0, number_files):
         start=ranges[i]
         stop=ranges[i+1]
         label=re.sub(r"\.fa.*","."+str(i+1)+".fasta", fasta_file)
         out=open(label,"w")
-        
+
         for f in fasta.keys()[start:stop]:
             out.write(">"+f+"\n"+str(fasta[f])+"\n")
         out.close()
-        
-split_fasta(number_files, fasta_file)
+
+if __name__=='__main__':
+    split_fasta(number_files, fasta_file)

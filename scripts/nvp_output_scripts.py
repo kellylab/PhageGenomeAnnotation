@@ -196,8 +196,6 @@ def write_gff3_file(phage, output_file, prod_path, faa_path, genome_path, blast_
         out.write(CRISPR_gff3(phage, crt_path))
 
 
-
-
 #function to query sqlite tara db... not going to use because tara project used very weak
 #evalues to assign function/OGs to sequences within their library
 def query_tara_db(tid):

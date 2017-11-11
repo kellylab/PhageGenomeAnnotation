@@ -10,7 +10,7 @@ import click
 @click.version_option('0.0.0')
 @click.pass_context
 def cli(obj):
-    '''run trnascan for annotation'''
+    '''run prodigal for annotation'''
     pass
 
 def run_prodigal_phage(inputfasta, out_gene, out_fna, out_prot):
