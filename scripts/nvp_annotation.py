@@ -85,8 +85,8 @@ def run_all(phage_list, genome_dir, outdir, blast_databasedir, ublast_path, ubla
 
 
 @cli.command("write-gff3s", short_help='write gff3 files given all appropriate input directories')
-@click.option("genome-dir", help="location of genomic contigs in fasta format")
-@click.option("outdir", help="parent directory of all other results directories, assumes that trnascan, crt and blasts have already been run and have default naming structure")
+@click.option("--genome-dir", help="location of genomic contigs in fasta format")
+@click.option("--outdir", help="parent directory of all other results directories, assumes that trnascan, crt and blasts have already been run and have default naming structure")
 def write_from_genomedir(genome_dir, outdir):
     blast_dir = op.join(outdir, "blasts")
     trna_dir = op.join(outdir, 'trna')
