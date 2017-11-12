@@ -39,7 +39,7 @@ def write_gff3s(phage_list, output_dir, prod_dir, prot_dir, genome_dir, blast_di
 @click.option('--ublast_path', help="where ublast executable found", default='/home/sbiller/usearch7.0.1090_i86linux64')
 @click.option('--ublast_evalue', help='evalue to use for ublast', default='1e-5')
 @click.option('--path-to-crt', help='location of crt executable', default="/home/jbrown/programs/CRT1.2-CLI.jar")
-def run_all(phage_list, genome_dir, outdir, blast_databasedir, ublast_path, ublast_evalue):
+def run_all(phage_list, genome_dir, outdir, blast_databasedir, ublast_path, ublast_evalue, path_to_crt):
     print("Running prodigal now")
     prod_dir, prot_dir, fna_dir = run_prodigals(phage_list, outdir, genome_dir)
 
@@ -60,7 +60,7 @@ def run_all(phage_list, genome_dir, outdir, blast_databasedir, ublast_path, ubla
     gff_dir = write_gff3s(phage_list, gff_dir, prod_dir, prot_dir, genome_dir, blast_dir, trna_dir, crt_dir, cov_threshold=75)
 
 
-@cli.command("genome-dir-runall", short_help="provide space separated list of phages to blast")
+@cli.command("genome-dir-runall", short_help="indicate directory where all genomes are found as fasta files (all files in directory will be annotated)")
 @click.option('--outdir', help="where to send blast outputs")
 @click.option('--genome-dir', help="where to find genomic contigs in fasta format")
 @click.option('--blast_databasedir', help="where to find the blast databases", default='/nobackup1/jbrown/annotation/databases')
@@ -70,7 +70,7 @@ def run_all(phage_list, genome_dir, outdir, blast_databasedir, ublast_path, ubla
 @click.option("--nvp",
                 help="True if this phage is formatted like a nahant vibriophage (#.###.X) e.g. 1.028.A, otherwise, phage name assumed to be everything before first '.' e.g. for file /genomedir/phage1.fasta, the name is 'phage1'",
                 default=True)
-def run_all(phage_list, genome_dir, outdir, blast_databasedir, ublast_path, ublast_evalue, nvp):
+def run_all(phage_list, genome_dir, outdir, blast_databasedir, ublast_path, ublast_evalue, path_to_crt, nvp):
     fastas = glob.glob(op.join(genome_dir, "*.f*a"))
 
     if nvp is True:
