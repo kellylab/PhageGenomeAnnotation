@@ -42,7 +42,7 @@ def ips_dict(ips):
                     continue
                 else:
                     desc = l.SignatureDescription
-            ips_anns[pid] = [ desc, source]
+            ips_anns[pid] = [desc, source]
         else:
             desc = l.InterproAnnotationDesc
             ipsid = l.InterProAnnotationAcc
