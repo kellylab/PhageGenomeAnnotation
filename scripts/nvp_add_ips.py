@@ -85,7 +85,11 @@ class GffLine():
 def find_file_matches(ipslist, gfflist):
     for i in ipslist:
         phage = ".".join(op.basename(i).split(".")[:3])
-        ann = [j for j in gfflist if phage in j][0]
+        try:
+            ann = [j for j in gfflist if phage in j][0]
+        except:
+            print("gff for {} not found".format(phage))
+            ann = None
         yield phage, i, ann
 
 
@@ -110,10 +114,20 @@ def merge_gff3_and_ips(ips_dir, gff3_dir, outdir):
     gff_list = glob.glob(op.join(gff3_dir, "*"))
 
     for phage, ips, gff in find_file_matches(ips_list, gff_list):
+        if gff is None:
+            print("WARNING: could not find gff file for {}, skipping pairing".format(phage))
+            continue
         out_gff = op.join(outdir, "{}_ips.gff3".format(phage))
         print("merging {} and {} into {} for phage {}".format(ips, gff, out_gff, phage))
         combine_ips_gff3(ips, gff, out_gff)
     print("done!")
+
+@cli.command('merge-gff-ips-files', short_help='merge a gff3 file and a ips tsv')
+@click.argument('gff')
+@click.argument('ips')
+@click.argument('outfile')
+def merge_gff_ips_files(gff, ips, outfile):
+    combine_ips_gff3(ips, gff, outfile)
 
 
 @cli.command("merge-dirs", short_help="merge gff and ips tsv outputs for nvp collection")

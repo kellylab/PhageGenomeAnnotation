@@ -18,12 +18,16 @@ def cli(obj):
     '''functions to output gff3s'''
     pass
 
-def write_gff3s(phage_list, output_dir, prod_dir, prot_dir, genome_dir, blast_dir, trna_dir, crt_dir, cov_threshold=75):
+def write_gff3s(phage_list, output_dir, prod_dir, prot_dir, genome_dir, blast_dir, trna_dir, crt_dir, cov_threshold=75, overwrite=False):
     prep_outdir(output_dir)
     for phage in phage_list:
         output_file = op.join(output_dir, '{}.gff3'.format(phage))
+        if op.exists(output_file) and overwrite == False:
+            return output_dir
+
         # write_gff3_file(phage, output_file, prod_path, faa_path, genome_path, blast_path, trna_path, crt_path, cov_thresh=75):
-        write_gff3_file(phage, output_file, prod_dir, prot_dir, genome_dir, blast_dir, trna_dir, crt_dir, cov_thresh=75)
+        else:
+            write_gff3_file(phage, output_file, prod_dir, prot_dir, genome_dir, blast_dir, trna_dir, crt_dir, cov_thresh=75)
     return output_dir
 
 
@@ -96,7 +100,8 @@ def run_all(phage_list, genome_dir, outdir, blast_databasedir, ublast_path, ubla
 @click.option("--crt-dir", help="location of crt results if not in outdir", default=None)
 @click.option("--prod-dir", help="location of prodigal .gff files if not in outdir", default=None)
 @click.option("--prot-dir", help="location of translated orfs if not in outdir", default=None)
-def write_from_genomedir(genome_dir, outdir, ips_dir, blast_dir, trna_dir, crt_dir, prod_dir, prot_dir):
+@click.option("--overwrite", help="Ignore existing gff3 files if True", default=False)
+def write_from_genomedir(genome_dir, outdir, ips_dir, blast_dir, trna_dir, crt_dir, prod_dir, prot_dir, overwrite):
     '''
     nvp_annotations.py write-gff3s --genome-dir /nobackup1/jbrown/nvp_for_ncbi/genomes/ --outdir /nobackup1/jbrown/nvp_for_ncbi/ \
     --ips-dir /nobackup1/jbrown/annotation/protein_ips_calls/ --blast-dir /nobackup1/jbrown/annotation/blasts/ \
@@ -118,7 +123,7 @@ def write_from_genomedir(genome_dir, outdir, ips_dir, blast_dir, trna_dir, crt_d
     gff_dir = op.join(outdir, 'gff3')
 
     print("Writing results to gff3")
-    gff_dir = write_gff3s(phage_list, gff_dir, prod_dir, prot_dir, genome_dir, blast_dir, trna_dir, crt_dir, cov_threshold=75)
+    gff_dir = write_gff3s(phage_list, gff_dir, prod_dir, prot_dir, genome_dir, blast_dir, trna_dir, crt_dir, cov_threshold=75, overwrite=overwrite)
 
     if ips_dir is not None:
         ips_merge_out = op.join(outdir, 'gff_ips_added')
