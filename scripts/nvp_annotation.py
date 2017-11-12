@@ -68,7 +68,7 @@ def run_all(phage_list, genome_dir, outdir, blast_databasedir, ublast_path, ubla
 @click.option('--ublast_evalue', help='evalue to use for ublast', default='1e-5')
 @click.option('--path-to-crt', help='location of crt executable', default="/home/jbrown/programs/CRT1.2-CLI.jar")
 @click.option("--nvp",
-                help="True if this phage is formatted like a nahant vibriophage (#.###.X) e.g. 1.028.A, otherwise, phage name assumed to be everything before first '.' e.g. for file /genomedir/phage1.fasta, the name is 'phage1'"
+                help="True if this phage is formatted like a nahant vibriophage (#.###.X) e.g. 1.028.A, otherwise, phage name assumed to be everything before first '.' e.g. for file /genomedir/phage1.fasta, the name is 'phage1'",
                 default=True)
 def run_all(phage_list, genome_dir, outdir, blast_databasedir, ublast_path, ublast_evalue, nvp):
     fastas = glob.glob(op.join(genome_dir, "*.f*a"))
@@ -109,7 +109,7 @@ def run_all(phage_list, genome_dir, outdir, blast_databasedir, ublast_path, ubla
 @click.option("--prot-dir", help="location of translated orfs if not in outdir", default=None)
 @click.option("--overwrite", help="Ignore existing gff3 files if True", default=False)
 @click.option("--nvp",
-                help="True if this phage is formatted like a nahant vibriophage (#.###.X) e.g. 1.028.A, otherwise, phage name assumed to be everything before first '.' e.g. for file /genomedir/phage1.fasta, the name is 'phage1'"
+                help="True if this phage is formatted like a nahant vibriophage (#.###.X) e.g. 1.028.A, otherwise, phage name assumed to be everything before first '.' e.g. for file /genomedir/phage1.fasta, the name is 'phage1'",
                 default=True)
 def write_from_genomedir(genome_dir, outdir, ips_dir, blast_dir, trna_dir, crt_dir, prod_dir, prot_dir, overwrite, nvp):
     '''
