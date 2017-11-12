@@ -5,13 +5,13 @@ import os
 from pyfaidx import Fasta
 
 #i=prodigal line that begins with a location identifier..
-#function meant to iterate over the length of a prodigal file every two lines starting at line 3 as such: 
+#function meant to iterate over the length of a prodigal file every two lines starting at line 3 as such:
 '''
 for i in range (2, len(open(prod_file).readlines())-1,2):
     get_prod_cds_info(i,...)
 '''
 
-def get_prod_cds_info(i, prod, digits, phage):  
+def get_prod_cds_info(i, prod, digits, phage):
     loc=prod[i]
     if len(loc.split())==2:
         if "complement" in prod[i].split()[1]:
@@ -65,128 +65,139 @@ def find_best_hit2(gene_id, blast_dict, ann1=["cog","pfam","aclame","kegg","egg"
             return best_annotation
     else:
         best_annotation=["",""]
-    return best_annotation 
+    return best_annotation
 
 def gff3_header(prod):
     Sequence=open(prod).readlines()[0].split(";")[2].split("=")[1].replace('"','')
     return Sequence+"\n"
 
 #merge BLAST results into one gff3
-    
-def cds_blast_annotations_to_gff3(phage, cov_thresh=75):
+
+def cds_blast_annotations_to_gff3(phage, prod_path, faa_path, blast_path, cov_thresh=75):
     #prodigal and fasta files:
-    prod=prod_path+phage+"gene"
-    faa=faa_path+phage+"faa"
+    prod=glob.glob(op.join(prod_path,phage + "*.gen*"))[0]
+    faa=glob.glob(op.join(faa_path, phage+"*.f*a"))[0]
     Sequence=open(prod).readlines()[0].split(";")[2].split("=")[1].replace('"','')
-    
+
     ogs=["kegg","pfam","cog","egg", "pog"]
     annotes=["aclame","tara","cvp"]
-    
-    blast_dict=load_blast_files(phage, cov_thresh=cov_thresh)
-    
+
+    blast_dict=load_blast_files(phage, prod_path, faa_path, blast_path, cov_thresh=cov_thresh)
+
     out=""  #set up string to write to
-    
+
     #run through annotations of each prodigal-identified CDS:
-    prod=open(prod).readlines()
-    digits=get_digits(faa)
-    
-    #write gff3 lines from prodigal files and blast dicts:
-    for i in range(2,len(prod)-1,2):
+    with open(prod) as ih:
+        prod= ih.readlines()
+        digits=get_digits(faa)
+        #write gff3 lines from prodigal files and blast dicts:
+        for i in range(2,len(prod)-1,2):
 
-        coords=get_prod_cds_info(i, prod, digits, phage)
-        locus_tag=coords[0]
-        start=coords[1]
-        stop=coords[2]
-        strand=coords[3]
-        
-        #set up col9
-        col9="ID="+locus_tag
-        
-        #ID best hit:
-        best_hits=find_best_hit2(locus_tag, blast_dict)
+            coords=get_prod_cds_info(i, prod, digits, phage)
+            locus_tag=coords[0]
+            start=coords[1]
+            stop=coords[2]
+            strand=coords[3]
 
-        #establish name:
-        Name=best_hits[0]
-        if len(Name)==0:
-            col9+='; Name=hypothetical protein'
-        else:
-            col9+="; Name="+Name.replace('"','')
+            #set up col9
+            col9="ID="+locus_tag
 
-        #Add OG annotations:
-        for d in range(0, len(ogs)):
-            og_dict=blast_dict[ogs[d]]
-            if locus_tag in og_dict.keys():
-                col9+='; Ontology_term="'+ogs[d]+":"+og_dict[locus_tag][-2]+'"'
+            #ID best hit:
+            best_hits=find_best_hit2(locus_tag, blast_dict)
 
-        #Add db closest hits to notes
-        for d in range(0, len(annotes)):
-            annote_dict=blast_dict[annotes[d]]
-            if locus_tag in annote_dict.keys():
-                col9+='; note="'+annotes[d]+"_best_match:"+annote_dict[locus_tag][-2]+'"'
-        out+=Sequence+"\t"+"prod"+"\t"+"CDS"+"\t"+start+"\t"+stop+"\t"+"."+"\t"+strand+"\t"+"0"+"\t"+col9+"\n"
-    return out
-
-def CRISPR_gff3(phage):
-    crt_output="/nobackup1/jbrown/annotation/crt/"+phage+"crt"
-    crtout=open(crt_output).readlines()
-    name=phage
-    SeqID=crtout[0].split()[1]
-    out=""
-    for line in crtout:
-        if line.startswith("CRISPR"):
-            vec=line.split()
-            number=vec[1]
-            start=vec[3]
-            stop=vec[5]
-            ID="NVP"+name.replace(".","")+"_CRISPR-like_"+number
-            out+=SeqID+"\t"+"crt"+"\tputative CRISPR feature\t%s\t%s\t.\t.\t.\tID=%s" % (start, stop, ID)
-            out+=", note=CRISPR region\n"
-    return out
-
-def tRNA_scan_to_gff3(phage):
-    tRNAScanSE_file="/nobackup1/jbrown/annotation/trna/%strna" %phage
-    if os.path.getsize(tRNAScanSE_file)>0:
-        t=open(tRNAScanSE_file).readlines()
-        tanns=""
-        for line in t[3:]:
-            l=line.split("\t")
-            locus_tag="NVP"+l[0].split("_")[1].replace(".","")+"_tRNA_"+l[1]
-            start=l[2]
-            stop=l[3]
-            if start<stop:
-                strand="+"
+            #establish name:
+            Name=best_hits[0]
+            if len(Name)==0:
+                col9+='; Name=hypothetical protein'
             else:
-                strand="-"
-            aa=l[4]
-            anticodon=l[5]
-            SeqID=l[0]
-            col9="ID="+locus_tag+", aa="+aa+", anticodon="+anticodon
-            out=SeqID+"\t"+"tRNAScanSE"+"\t"+"tRNA"+"\t"+start+"\t"+stop+"\t"+l[-1].replace("\n","")+"\t"+strand+"\t"+"0"+"\t"+col9+"\n"
-            tanns+=out
+                col9+="; Name="+Name.replace('"','')
+
+            #Add OG annotations:
+            for d in range(0, len(ogs)):
+                og_dict=blast_dict[ogs[d]]
+                if locus_tag in og_dict.keys():
+                    col9+='; Ontology_term="'+ogs[d]+":"+og_dict[locus_tag][-2]+'"'
+
+            #Add db closest hits to notes
+            for d in range(0, len(annotes)):
+                annote_dict=blast_dict[annotes[d]]
+                if locus_tag in annote_dict.keys():
+                    col9+='; note="'+annotes[d]+"_best_match:"+annote_dict[locus_tag][-2]+'"'
+            out+=Sequence+"\t"+"prod"+"\t"+"CDS"+"\t"+start+"\t"+stop+"\t"+"."+"\t"+strand+"\t"+"0"+"\t"+col9+"\n"
+    return out
+
+def CRISPR_gff3(phage, crt_path="/nobackup1/jbrown/annotation/crt/"):
+    crt_output=op.join(crt_path, phage+".crt")
+    with open(crt_output) as cout:
+        crtout = cout.readlines()
+        name=phage
+        SeqID=crtout[0].split()[1]
+        out=""
+        for line in crtout:
+            if line.startswith("CRISPR"):
+                vec=line.split()
+                number=vec[1]
+                start=vec[3]
+                stop=vec[5]
+                ID="NVP"+name.replace(".","")+"_CRISPR-like_"+number
+                out+=SeqID+"\t"+"crt"+"\tputative CRISPR feature\t%s\t%s\t.\t.\t.\tID=%s" % (start, stop, ID)
+                out+=", note=CRISPR region\n"
+    return out
+
+def tRNA_scan_to_gff3(phage, trna_path="/nobackup1/jbrown/annotation/trna"):
+    tRNAScanSE_file=op.join(trna_path,"{}.trna".format(phage))
+    if os.path.getsize(tRNAScanSE_file)>0:
+        with open(tRNAScanSE_file) as tout:
+            t = tout.readlines()
+            tanns=""
+            for line in t[3:]:
+                l=line.split("\t")
+                locus_tag="NVP"+l[0].split("_")[1].replace(".","")+"_tRNA_"+l[1]
+                start=l[2]
+                stop=l[3]
+                if start<stop:
+                    strand="+"
+                else:
+                    strand="-"
+                aa=l[4]
+                anticodon=l[5]
+                SeqID=l[0]
+                col9="ID="+locus_tag+", aa="+aa+", anticodon="+anticodon
+                out=SeqID+"\t"+"tRNAScanSE"+"\t"+"tRNA"+"\t"+start+"\t"+stop+"\t"+l[-1].replace("\n","")+"\t"+strand+"\t"+"0"+"\t"+col9+"\n"
+                tanns+=out
         return tanns
     else:
-        print "no tRNAs found in genome"
+        print("no tRNAs found in genome for {}".format(phage))
         return ""
-    
-#put them all together:
-def write_gff3_file(phage, output_file, cov_thresh=75):
-    prod=prod_path+phage+".gene"
-    faa=faa_path+phage+".faa"
-    genomic_fasta="/nobackup1/jbrown/annotation/genomes/%sfinal.fasta" % phage
-    
-    out=open(output_file,"w")
-    #out.write(gff3_header(phage+"gene"))
-    out.write(cds_blast_annotations_to_gff3(phage, cov_thresh=cov_thresh))
-    
-    
-    out.write(tRNA_scan_to_gff3(phage))
-    
-    crt_output=phage+"crt"
-    out.write(CRISPR_gff3(phage))
-    
-    out.close()
 
-    
+#put them all together:
+def write_gff3_file(phage, output_file, prod_path, faa_path, genome_path, blast_path, trna_path, crt_path, cov_thresh=75):
+    '''
+    >>output_file = "/nobackup1/jbrown/newmu/gff3/1.028.O.gff3"
+    >>prod_path = "/nobackup1/jbrown/newmu/genes/"
+    >>faa_path = "/nobackup1/jbrown/newmu/proteins/"
+    >>genome_path = "/nobackup1/jbrown/newmu/genomes/"
+    >>blast_path = "/nobackup1/jbrown/newmu/blasts/"
+    >>trna_path = "/nobackup1/jbrown/newmu/trna/"
+    >>crt_path = "/nobackup1/jbrown/newmu/crt/"
+    >> write_gff3_file('1.028.O', output_file, prod_path, faa_path, genome_path, blast_path, trna_path, crt_path, cov_thresh=75)
+    '''
+    print("prod dir: {}".format(prod_path))
+    print("looking for: {}".format(op.join(prod_path,phage + "*.gen*")))
+    prod=glob.glob(op.join(prod_path,phage + "*.gen*"))[0]
+    faa=glob.glob(op.join(faa_path, phage+"*.f*a"))[0]
+    genomic_fasta=op.join(genome_path, "%s.final.fasta" % phage)
+
+    with open(output_file,"w") as out:
+    #cds_blast_annotations_to_gff3(phage, prod_path, faa_path, blast_path, cov_thresh=75):
+        print("identifying annotations based on blast results for {}".format(phage))
+        out.write(cds_blast_annotations_to_gff3(phage, prod_path, faa_path, blast_path, cov_thresh=cov_thresh))
+        #tRNA_scan_to_gff3(phage, trna_path="/nobackup1/jbrown/annotation/trna"):
+        print("identifying trna annotations for {}".format(phage))
+        out.write(tRNA_scan_to_gff3(phage, trna_path))
+        out.write(CRISPR_gff3(phage, crt_path))
+
+
 #function to query sqlite tara db... not going to use because tara project used very weak
 #evalues to assign function/OGs to sequences within their library
 def query_tara_db(tid):
@@ -201,97 +212,95 @@ def query_tara_db(tid):
     conn.close()
     return [gene, egg, ko, kfunc]
 
-def cds_blast_annotations_to_table(phage, cov_thresh=75):
+def cds_blast_annotations_to_table(phage, prod_path, faa_path, blast_path, cov_thresh=75):
     #prodigal and fasta files:
-    prod=prod_path+phage+"gene"
-    faa=faa_path+phage+"faa"
+    prod=glob.glob(op.join(prod_path,phage + "*.gen*"))[0]
+    faa=glob.glob(op.join(faa_path, phage+"*.f*a"))[0]
     Sequence=open(prod).readlines()[0].split(";")[2].split("=")[1].replace('"','')
-    
+
     ogs=["kegg","pfam","cog","egg"]
     annotes=["aclame","tara","cvp"]
-    
-    blast_dict=load_blast_files(phage, cov_thresh=cov_thresh)
-    
+    #load_blast_files(phage, prod_path, faa_path, blast_path, cov_thresh=75):
+    blast_dict=load_blast_files(phage, prod_path, faa_path, blast_path, cov_thresh=cov_thresh)
+
     out=""  #set up string to write to
     #write gff3 lines from prodigal files and blast dicts:
     out=""
     #out+="genome\tlocus_tag\ttype\tstart\tstop\tstrand\tbest_hit_annotation\t"
     #out+="kegg\tpfam\tcog\tegg\taclame\ttara\tcvp\n"
-    
+
     #run through annotations of each prodigal-identified CDS:
-    prod=open(prod).readlines()
-    digits=get_digits(faa)
-    
-    #write lines from prodigal files and blast dicts:
-    for i in range(2,len(prod)-1,2):
-        out+=Sequence+"\t"
-        
-        
-        coords=get_prod_cds_info(i, prod, digits, phage)
-        locus_tag=coords[0]
-        start=coords[1]
-        stop=coords[2]
-        strand=coords[3]
-        
-        out+=locus_tag+"\tcds\t"+start+"\t"+stop+"\t"+strand+"\t"
-        
-        #ID best hit:
-        best_hits=find_best_hit2(locus_tag, blast_dict)
+    with open(prod) as ih:
+        prod = ih.readlines()
+        digits=get_digits(faa)
+        #write lines from prodigal files and blast dicts:
+        for i in range(2,len(prod)-1,2):
+            out+=Sequence+"\t"
+            coords=get_prod_cds_info(i, prod, digits, phage)
+            locus_tag=coords[0]
+            start=coords[1]
+            stop=coords[2]
+            strand=coords[3]
 
-        #establish name:
-        Annotation=best_hits[0]
-        if len(Annotation)==0:
-            Annotation='hypothetical protein'
-        else:
-            Annotation=Annotation.replace('"','')
-        out+=Annotation+"\t"
-        
-        #Add OG annotations:
-        for d in range(0, len(ogs)):
-            og_dict=blast_dict[ogs[d]]
-            if locus_tag in og_dict.keys():
-                out+=og_dict[locus_tag][-2]+"\t"
-            else:
-                out+="NA\t"
+            out+=locus_tag+"\tcds\t"+start+"\t"+stop+"\t"+strand+"\t"
 
-        #Add db closest hits to notes
-        for d in range(0, len(annotes)):
-            annote_dict=blast_dict[annotes[d]]
-            if locus_tag in annote_dict.keys():
-                out+=annote_dict[locus_tag][-2]+'\t'
+            #ID best hit:
+            best_hits=find_best_hit2(locus_tag, blast_dict)
+
+            #establish name:
+            Annotation=best_hits[0]
+            if len(Annotation)==0:
+                Annotation='hypothetical protein'
             else:
-                out+="NA\t"
-        out+="\n"
+                Annotation=Annotation.replace('"','')
+            out+=Annotation+"\t"
+
+            #Add OG annotations:
+            for d in range(0, len(ogs)):
+                og_dict=blast_dict[ogs[d]]
+                if locus_tag in og_dict.keys():
+                    out+=og_dict[locus_tag][-2]+"\t"
+                else:
+                    out+="NA\t"
+
+            #Add db closest hits to notes
+            for d in range(0, len(annotes)):
+                annote_dict=blast_dict[annotes[d]]
+                if locus_tag in annote_dict.keys():
+                    out+=annote_dict[locus_tag][-2]+'\t'
+                else:
+                    out+="NA\t"
+            out+="\n"
 
     return out
 
 def kegg_egg_pog_tbl(phage, cov_thresh=75):
     #prodigal and fasta files:
-    prod=prod_path+phage+"gene"
-    faa=faa_path+phage+"faa"
+    prod=glob.glob(op.join(prod_path,phage + "*.gen*"))[0]
+    faa=glob.glob(op.join(faa_path, phage+"*.f*a"))[0]
     Sequence=open(prod).readlines()[0].split(";")[2].split("=")[1].replace('"','')
-    
+
     ogs=["kegg","egg","pog"]
     og_lens={"kegg":7,"egg":7,"pog":9}
     blast_dict=load_kegg_egg_pog_blast(phage, cov_thresh=cov_thresh)
-    
+
     out=""  #set up string to write to
 
-    
+
     #run through annotations of each prodigal-identified CDS:
     prod=open(prod).readlines()
     digits=get_digits(faa)
-    
+
     #write lines from prodigal files and blast dicts:
     for i in range(2,len(prod)-1,2):
         #col1
         out+=Sequence+"\t"
-        
-        
+
+
         locus_tag=get_prod_cds_info(i, prod, digits, phage)[0]
         #col2
         out+=locus_tag+"\t"
-        
+
         #Add OG annotations:
         for d in range(0, len(ogs)):
             og_dict=blast_dict[ogs[d]]
