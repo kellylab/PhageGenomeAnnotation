@@ -32,7 +32,7 @@ def ips_dict(ips):
     ips_anns = {}
 
     for i, l in best_hits.iterrows():
-        pid = l.ProteinAcc.replace("phage","_virus")
+        pid = l.ProteinAcc
         source = "InterPro"
         if pd.isnull(l.InterproAnnotationDesc):
             if l.Analysis == "TMHMM" or l.Analysis == "Coils":
@@ -52,7 +52,7 @@ def ips_dict(ips):
 
 class GffLine():
     def __init__(self, line):
-        vec = line.strip().split("\t")
+        vec = [i.rstrip() for i in line.strip().split("\t")]
         self.name = vec[0]
         self.method = vec[1]
         self.etype = vec[2]
@@ -64,7 +64,7 @@ class GffLine():
         self.notes = ";".join([i for i in vec[8].split(";") if "ID=" not in i and "Name=" not in i])
         self.pid = [i for i in vec[8].split(";") if "ID=" in i][0]
         self.desc = [i for i in vec[8].split(";") if "Name=" in i][0]
-        self.key = "{contig}_{number}".format(contig=self.name, number=int(self.pid.split("_")[-1]))
+        self.key = "{name}_{number}".format(name=self.name, number=int(self.pid.split("_")[-1]))
 
     def construct_note(self):
         notes = ";".join([self.pid, self.desc, self.notes])
@@ -100,8 +100,10 @@ def combine_ips_gff3(ips, gff3, outfile):
             if "tRNAScan" not in l and "crispr" not in l.lower():
                 line = GffLine(l)
                 if line.key in ipsdict.keys():
-                    line.change_desc(ipsdict[line.key][0])
-                    line.notes += '; note="InterPro:{ips}"'.format(ips=ipsdict[line.key][-1])
+                    if "hypothetical" in line.desc or "unknown" in line.desc:
+                        line.change_desc(ipsdict[line.key][0])
+                    if len(ipsdict[line.key]) == 3:    
+                        line.notes += '; note="InterPro:{ips}"'.format(ips=ipsdict[line.key][-1])
                 print(line.print_line(), file=oh)
             else:
                 print(l, file=oh)
