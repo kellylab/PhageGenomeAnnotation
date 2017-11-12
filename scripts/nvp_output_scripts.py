@@ -11,23 +11,23 @@ for i in range (2, len(open(prod_file).readlines())-1,2):
     get_prod_cds_info(i,...)
 '''
 
-def get_prod_cds_info(i, prod, digits, phage):
-    loc=prod[i]
-    if len(loc.split())==2:
+def get_prod_cds_info(i, prod, digits, phage, prefix='NVP'):
+    loc = prod[i]
+    if len(loc.split()) == 2:
         if "complement" in prod[i].split()[1]:
-            strand="-"
-            stop=loc.split("..")[1].replace(")\n","")
-            start=loc.split("(")[1].split("..")[0]
+            strand = "-"
+            stop = loc.split("..")[1].replace(")\n","")
+            start = loc.split("(")[1].split("..")[0]
         else:
-            strand="+"
-            start=loc.split()[1].split("..")[0]
-            stop=loc.split()[1].split("..")[1].replace("\n","")
-        start=start.replace(">","").replace("<","")
-        stop=stop.replace(">","").replace("<","")
-    info=prod[i+1]
-    number=info.split(";")[0].split("=")[2].split("_")[1]
-    z="0"*(digits-len(number))
-    t="NVP"+phage.replace(".","")+"_"+z+number
+            strand = "+"
+            start = loc.split()[1].split("..")[0]
+            stop = loc.split()[1].split("..")[1].replace("\n","")
+        start = start.replace(">","").replace("<","")
+        stop = stop.replace(">","").replace("<","")
+    info = prod[i+1]
+    number = info.split(";")[0].split("=")[2].split("_")[1]
+    z = "0" * (digits-len(number))
+    t = prefix + phage.replace(".","") + "_" + z + number
     return [t, start, stop, strand]
 
 #below: considers hits to more informative databases before less informative databases
@@ -73,7 +73,7 @@ def gff3_header(prod):
 
 #merge BLAST results into one gff3
 
-def cds_blast_annotations_to_gff3(phage, prod_path, faa_path, blast_path, cov_thresh=75):
+def cds_blast_annotations_to_gff3(phage, prod_path, faa_path, blast_path, cov_thresh=75, prefix="NVP"):
     #prodigal and fasta files:
     prod=glob.glob(op.join(prod_path,phage + "*.gen*"))[0]
     faa=glob.glob(op.join(faa_path, phage+"*.f*a"))[0]
@@ -93,7 +93,7 @@ def cds_blast_annotations_to_gff3(phage, prod_path, faa_path, blast_path, cov_th
         #write gff3 lines from prodigal files and blast dicts:
         for i in range(2,len(prod)-1,2):
 
-            coords=get_prod_cds_info(i, prod, digits, phage)
+            coords=get_prod_cds_info(i, prod, digits, phage, prefix=prefix)
             locus_tag=coords[0]
             start=coords[1]
             stop=coords[2]
@@ -126,7 +126,7 @@ def cds_blast_annotations_to_gff3(phage, prod_path, faa_path, blast_path, cov_th
             out+=Sequence+"\t"+"prod"+"\t"+"CDS"+"\t"+start+"\t"+stop+"\t"+"."+"\t"+strand+"\t"+"0"+"\t"+col9+"\n"
     return out
 
-def CRISPR_gff3(phage, crt_path="/nobackup1/jbrown/annotation/crt/"):
+def CRISPR_gff3(phage, prefix="NVP", crt_path="/nobackup1/jbrown/annotation/crt/"):
     crt_output=op.join(crt_path, phage+".crt")
     with open(crt_output) as cout:
         crtout = cout.readlines()
@@ -139,12 +139,12 @@ def CRISPR_gff3(phage, crt_path="/nobackup1/jbrown/annotation/crt/"):
                 number=vec[1]
                 start=vec[3]
                 stop=vec[5]
-                ID="NVP"+name.replace(".","")+"_CRISPR-like_"+number
-                out+=SeqID+"\t"+"crt"+"\tputative CRISPR feature\t%s\t%s\t.\t.\t.\tID=%s" % (start, stop, ID)
-                out+=", note=CRISPR region\n"
+                ID=prefix + name.replace(".","") + "_CRISPR-like_" + number
+                out += SeqID + "\t" + "crt" + "\tputative CRISPR feature\t%s\t%s\t.\t.\t.\tID=%s" % (start, stop, ID)
+                out += ", note=CRISPR region\n"
     return out
 
-def tRNA_scan_to_gff3(phage, trna_path="/nobackup1/jbrown/annotation/trna"):
+def tRNA_scan_to_gff3(phage, trna_path="/nobackup1/jbrown/annotation/trna", prefix="NVP"):
     tRNAScanSE_file=op.join(trna_path,"{}.trna".format(phage))
     if os.path.getsize(tRNAScanSE_file)>0:
         with open(tRNAScanSE_file) as tout:
@@ -152,7 +152,7 @@ def tRNA_scan_to_gff3(phage, trna_path="/nobackup1/jbrown/annotation/trna"):
             tanns=""
             for line in t[3:]:
                 l=line.split("\t")
-                locus_tag="NVP"+l[0].split("_")[1].replace(".","")+"_tRNA_"+l[1]
+                locus_tag = prefix + l[0].split("_")[1].replace(".","")+"_tRNA_" + l[1]
                 start=l[2]
                 stop=l[3]
                 if start<stop:
@@ -171,7 +171,8 @@ def tRNA_scan_to_gff3(phage, trna_path="/nobackup1/jbrown/annotation/trna"):
         return ""
 
 #put them all together:
-def write_gff3_file(phage, output_file, prod_path, faa_path, genome_path, blast_path, trna_path, crt_path, cov_thresh=75):
+def write_gff3_file(phage, output_file, prod_path, faa_path, genome_path,
+                    blast_path, trna_path, crt_path, prefix="NVP", cov_thresh=75):
     '''
     >>output_file = "/nobackup1/jbrown/newmu/gff3/1.028.O.gff3"
     >>prod_path = "/nobackup1/jbrown/newmu/genes/"
@@ -191,11 +192,11 @@ def write_gff3_file(phage, output_file, prod_path, faa_path, genome_path, blast_
     with open(output_file,"w") as out:
     #cds_blast_annotations_to_gff3(phage, prod_path, faa_path, blast_path, cov_thresh=75):
         print("identifying annotations based on blast results for {}".format(phage))
-        out.write(cds_blast_annotations_to_gff3(phage, prod_path, faa_path, blast_path, cov_thresh=cov_thresh))
+        out.write(cds_blast_annotations_to_gff3(phage, prod_path, faa_path, blast_path, cov_thresh=cov_thresh, prefix=prefix))
         #tRNA_scan_to_gff3(phage, trna_path="/nobackup1/jbrown/annotation/trna"):
         print("identifying trna annotations for {}".format(phage))
-        out.write(tRNA_scan_to_gff3(phage, trna_path))
-        out.write(CRISPR_gff3(phage, crt_path))
+        out.write(tRNA_scan_to_gff3(phage, trna_path, prefix=prefix))
+        out.write(CRISPR_gff3(phage, crt_path, prefix=prefix))
 
 
 #function to query sqlite tara db... not going to use because tara project used very weak
@@ -212,7 +213,7 @@ def query_tara_db(tid):
     conn.close()
     return [gene, egg, ko, kfunc]
 
-def cds_blast_annotations_to_table(phage, prod_path, faa_path, blast_path, cov_thresh=75):
+def cds_blast_annotations_to_table(phage, prod_path, faa_path, blast_path, cov_thresh=75, prefix="NVP"):
     #prodigal and fasta files:
     prod=glob.glob(op.join(prod_path,phage + "*.gen*"))[0]
     faa=glob.glob(op.join(faa_path, phage+"*.f*a"))[0]
@@ -236,7 +237,7 @@ def cds_blast_annotations_to_table(phage, prod_path, faa_path, blast_path, cov_t
         #write lines from prodigal files and blast dicts:
         for i in range(2,len(prod)-1,2):
             out+=Sequence+"\t"
-            coords=get_prod_cds_info(i, prod, digits, phage)
+            coords=get_prod_cds_info(i, prod, digits, phage, prefix=prefix)
             locus_tag=coords[0]
             start=coords[1]
             stop=coords[2]
@@ -274,7 +275,7 @@ def cds_blast_annotations_to_table(phage, prod_path, faa_path, blast_path, cov_t
 
     return out
 
-def kegg_egg_pog_tbl(phage, cov_thresh=75):
+def kegg_egg_pog_tbl(phage, cov_thresh=75, prefix="NVP"):
     #prodigal and fasta files:
     prod=glob.glob(op.join(prod_path,phage + "*.gen*"))[0]
     faa=glob.glob(op.join(faa_path, phage+"*.f*a"))[0]
@@ -297,7 +298,7 @@ def kegg_egg_pog_tbl(phage, cov_thresh=75):
         out+=Sequence+"\t"
 
 
-        locus_tag=get_prod_cds_info(i, prod, digits, phage)[0]
+        locus_tag=get_prod_cds_info(i, prod, digits, phage, prefix=prefix)[0]
         #col2
         out+=locus_tag+"\t"
 

@@ -18,7 +18,7 @@ def cli(obj):
     '''functions to output gff3s'''
     pass
 
-def write_gff3s(phage_list, output_dir, prod_dir, prot_dir, genome_dir, blast_dir, trna_dir, crt_dir, cov_threshold=75, overwrite=False):
+def write_gff3s(phage_list, output_dir, prod_dir, prot_dir, genome_dir, blast_dir, trna_dir, crt_dir, prefix="NVP", cov_threshold=75, overwrite=False):
     prep_outdir(output_dir)
     for phage in phage_list:
         output_file = op.join(output_dir, '{}.gff3'.format(phage))
@@ -27,7 +27,7 @@ def write_gff3s(phage_list, output_dir, prod_dir, prot_dir, genome_dir, blast_di
 
         # write_gff3_file(phage, output_file, prod_path, faa_path, genome_path, blast_path, trna_path, crt_path, cov_thresh=75):
         else:
-            write_gff3_file(phage, output_file, prod_dir, prot_dir, genome_dir, blast_dir, trna_dir, crt_dir, cov_thresh=75)
+            write_gff3_file(phage, output_file, prod_dir, prot_dir, genome_dir, blast_dir, trna_dir, crt_dir, cov_thresh=75, prefix=prefix)
     return output_dir
 
 
@@ -67,9 +67,16 @@ def run_all(phage_list, genome_dir, outdir, blast_databasedir, ublast_path, ubla
 @click.option('--ublast_path', help="where ublast executable found", default='/home/sbiller/usearch7.0.1090_i86linux64')
 @click.option('--ublast_evalue', help='evalue to use for ublast', default='1e-5')
 @click.option('--path-to-crt', help='location of crt executable', default="/home/jbrown/programs/CRT1.2-CLI.jar")
-def run_all(phage_list, genome_dir, outdir, blast_databasedir, ublast_path, ublast_evalue):
+@click.option("--nvp",
+                help="True if this phage is formatted like a nahant vibriophage (#.###.X) e.g. 1.028.A, otherwise, phage name assumed to be everything before first '.' e.g. for file /genomedir/phage1.fasta, the name is 'phage1'"
+                default=True)
+def run_all(phage_list, genome_dir, outdir, blast_databasedir, ublast_path, ublast_evalue, nvp):
     fastas = glob.glob(op.join(genome_dir, "*.f*a"))
-    phage_list = [".".join(op.basename(i).split(".")[:3]) for i in fastas]
+
+    if nvp is True:
+        phage_list = [".".join(op.basename(i).split(".")[:3]) for i in fastas]
+    else:
+        phage_list = [i.split(".")[0] for i in fastas]
 
     print("Running prodigal now")
     prod_dir, prot_dir, fna_dir = run_prodigals(phage_list, outdir, genome_dir)
@@ -101,7 +108,10 @@ def run_all(phage_list, genome_dir, outdir, blast_databasedir, ublast_path, ubla
 @click.option("--prod-dir", help="location of prodigal .gff files if not in outdir", default=None)
 @click.option("--prot-dir", help="location of translated orfs if not in outdir", default=None)
 @click.option("--overwrite", help="Ignore existing gff3 files if True", default=False)
-def write_from_genomedir(genome_dir, outdir, ips_dir, blast_dir, trna_dir, crt_dir, prod_dir, prot_dir, overwrite):
+@click.option("--nvp",
+                help="True if this phage is formatted like a nahant vibriophage (#.###.X) e.g. 1.028.A, otherwise, phage name assumed to be everything before first '.' e.g. for file /genomedir/phage1.fasta, the name is 'phage1'"
+                default=True)
+def write_from_genomedir(genome_dir, outdir, ips_dir, blast_dir, trna_dir, crt_dir, prod_dir, prot_dir, overwrite, nvp):
     '''
     nvp_annotations.py write-gff3s --genome-dir /nobackup1/jbrown/nvp_for_ncbi/genomes/ --outdir /nobackup1/jbrown/nvp_for_ncbi/ \
     --ips-dir /nobackup1/jbrown/annotation/protein_ips_calls/ --blast-dir /nobackup1/jbrown/annotation/blasts/ \
@@ -118,12 +128,17 @@ def write_from_genomedir(genome_dir, outdir, ips_dir, blast_dir, trna_dir, crt_d
     for i in [blast_dir, trna_dir, crt_dir, prod_dir, prot_dir]: assert op.exists(i), "Please make sure that {i} exists with a result per genome".format(i=i)
 
     fastas = glob.glob(op.join(genome_dir, "*.f*a"))
-    phage_list = [".".join(op.basename(i).split(".")[:3]) for i in fastas]
+    if nvp is True:
+        phage_list = [".".join(op.basename(i).split(".")[:3]) for i in fastas]
+        prefix = "NVP"
+    else:
+        phage_list = [i.split(".")[0] for i in fastas]
+        prefix = "CDS"
 
     gff_dir = op.join(outdir, 'gff3')
 
     print("Writing results to gff3")
-    gff_dir = write_gff3s(phage_list, gff_dir, prod_dir, prot_dir, genome_dir, blast_dir, trna_dir, crt_dir, cov_threshold=75, overwrite=overwrite)
+    gff_dir = write_gff3s(phage_list, gff_dir, prod_dir, prot_dir, genome_dir, blast_dir, trna_dir, crt_dir, cov_threshold=75, overwrite=overwrite, prefix=prefix)
 
     if ips_dir is not None:
         ips_merge_out = op.join(outdir, 'gff_ips_added')
