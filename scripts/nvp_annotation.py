@@ -92,12 +92,12 @@ def run_all_dir(genome_dir, outdir, blast_databasedir, ublast_path, ublast_evalu
 
     print("Running prodigal now")
     #run_prodigals(phage_names, outdir, genome_dir)
-    prod_dir, prot_dir, fna_dir = run_prodigals(phage_list, outdir, genome_dir)
+    prod_dir, prot_dir, fna_dir = run_prodigals(phage_list, outdir = outdir, genome_dir = genome_dir)
 
     blast_dir = op.join(outdir, "blasts")
     print("Running blasts now")
     #run_ublasts(phage_list, outdir, databasedir, proteindir, ublast_path='/home/sbiller/usearch7.0.1090_i86linux64', evalue='1e-5'):
-    blast_dir = run_ublasts(phage_list, blast_dir, blast_databasedir, prot_dir, ublast_path, ublast_evalue)
+    blast_dir = run_ublasts(phage_list, outdir = blast_dir, databasedir = blast_databasedir, proteindir = prot_dir, ublast_path = ublast_path, evalue = ublast_evalue)
 
     trna_dir = op.join(outdir, 'trna')
     print("Running trna scan now")
