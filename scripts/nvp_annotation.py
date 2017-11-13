@@ -33,8 +33,8 @@ def write_gff3s(phage_list, output_dir, prod_dir, prot_dir, genome_dir, blast_di
 
 @cli.command("phage-list-runall", short_help="provide space separated list of phages to blast")
 @click.argument('phage-list', nargs=-1)
-@click.option('--outdir', help="where to send blast outputs")
 @click.option('--genome-dir', help="where to find genomic contigs in fasta format")
+@click.option('--outdir', help="where to send blast outputs")
 @click.option('--blast_databasedir', help="where to find the blast databases", default='/nobackup1/jbrown/annotation/databases', show_default=True)
 @click.option('--ublast_path', help="where ublast executable found", default='/home/sbiller/usearch7.0.1090_i86linux64', show_default=True)
 @click.option('--ublast_evalue', help='evalue to use for ublast', default='1e-5', show_default=True)
@@ -43,7 +43,7 @@ def write_gff3s(phage_list, output_dir, prod_dir, prot_dir, genome_dir, blast_di
                 help="True if this phage is formatted like a nahant vibriophage (#.###.X) e.g. 1.028.A, otherwise, phage name assumed to be everything before first '.' e.g. for file /genomedir/phage1.fasta, the name is 'phage1'",
                 default=True, show_default=True
                 )
-def run_all(phage_list, genome_dir, outdir, blast_databasedir, ublast_path, ublast_evalue, path_to_crt):
+def run_all(phage_list, genome_dir, outdir, blast_databasedir, ublast_path, ublast_evalue, path_to_crt, nvp):
     print("Running prodigal now")
 
     if nvp is True:
@@ -70,8 +70,8 @@ def run_all(phage_list, genome_dir, outdir, blast_databasedir, ublast_path, ubla
 
 
 @cli.command("genome-dir-runall", short_help="indicate directory where all genomes are found as fasta files (all files in directory will be annotated)")
-@click.option('--outdir', help="where to send outputs")
 @click.option('--genome-dir', help="where to find genomic contigs in fasta format")
+@click.option('--outdir', help="where to send outputs")
 @click.option('--blast_databasedir', help="where to find the blast databases", default='/nobackup1/jbrown/annotation/databases', show_default=True)
 @click.option('--ublast_path', help="where ublast executable found", default='/home/sbiller/usearch7.0.1090_i86linux64', show_default=True)
 @click.option('--ublast_evalue', help='evalue to use for ublast', default='1e-5', show_default=True)
