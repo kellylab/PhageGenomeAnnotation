@@ -39,7 +39,7 @@ def run_ublasts(phage_list, outdir, databasedir, proteindir, ublast_path='/home/
             udb = op.join(databasedir, udbs[i])
             dbname = dbnames[i]
             print("running a ublast comparison of {} against {}".format(phage_proteins, udb))
-            out_blast = op.join(outdir, dbname, p + "vs."+dbname+".out"
+            out_blast = op.join(outdir, dbname, p + "vs."+dbname+".out")
             if op.exists(out_blast):
                 continue
             else:
