@@ -22,6 +22,8 @@ def cli(obj):
 
 
 def run_crt(input_fasta, output, path_to_crt="/home/jbrown/programs/CRT1.2-CLI.jar"):
+    if op.exists(output):
+        return output
     args="java -cp "+path_to_crt+" crt -minNR 2 "+input_fasta+" "+output
     subprocess.call(args.split(" "))
     return output
@@ -52,13 +54,18 @@ def crt_from_list(phage_list, outdir, genomedir, path_to_crt):
     run_crts(phage_list, outdir, genomedir, path_to_crt)
 
 
-@cli.command("from-genomedir", short_help="provide space separated list of phages to blast")
+@cli.command("from-genomedir", short_help="find genomes within indicated directory")
 @click.option('--outdir', help="where to send blast outputs", default="/nobackup1/jbrown/annotation/blasts/")
 @click.option('--genomedir', help="where phage genomes are found")
 @click.option('--path-to-crt', help="where crt executable is found", default='/home/jbrown/programs/CRT1.2-CLI.jar')
+@click.option('--nvp', help='indicate whether protein files follow nvp naming scheme', default=True, show_default=True)
 def crt_from_dir(outdir, genomedir, path_to_crt):
     fastas = glob.glob(op.join(genomedir, "*.f*a"))
-    phage_list = [".".join(op.basename(i).split(".")[:3]) for i in fastas]
+    if nvp is True:
+        phage_list = [".".join(op.basename(i).split(".")[:3]) for i in fastas]
+    else:
+        phage_list = [i.split(".")[0] for i in fastas]
+
     run_crts(phage_list, outdir, genomedir, path_to_crt)
 
 

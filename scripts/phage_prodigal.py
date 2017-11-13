@@ -14,8 +14,15 @@ def cli(obj):
     pass
 
 def run_prodigal_phage(inputfasta, out_gene, out_fna, out_prot):
-    to_run="prodigal -i "+inputfasta+" -o "+out_gene+" -a "+out_prot+" -d "+out_fna+" -p meta"
-    subprocess.call(to_run.split(" "))
+    exists = True
+    for f in [out_gene, out_fna, out_prot]:
+        if not op.exists(f):
+            exists = False
+            break
+    if exists is False:
+        to_run="prodigal -i "+inputfasta+" -o "+out_gene+" -a "+out_prot+" -d "+out_fna+" -p meta"
+        print("prodigal command: {}".format(to_run))
+        subprocess.call(to_run.split(" "))
 
 
 def prep_outdir(out_path):
@@ -32,8 +39,8 @@ def run_prodigals(phage_names, outdir, genome_dir):
         out_gene = op.join(outdirs[0],"{}.gene".format(p))
         out_prot = op.join(outdirs[1], "{}.faa".format(p))
         out_fna = op.join(outdirs[2], "{}.fna".format(p))
-        output = run_prodigal_phage(fasta, out_gene, out_fna, out_prot)
-        print("prodigal finished for {}.  Written to {}".format(p, output))
+        run_prodigal_phage(fasta, out_gene, out_fna, out_prot)
+        print("prodigal finished for {}.  Written to {}".format(p, outdir))
     return outdirs
 
 
@@ -45,12 +52,17 @@ def prodigal_from_list(phage_list, outdir, genomedir):
     run_prodigals(phage_list, outdir, genomedir)
 
 
-@cli.command("from-genomedir", short_help="provide space separated list of phages to blast")
+@cli.command("from-genomedir", short_help="find genomes within indicated genome directory")
 @click.option('--outdir', help="where to send blast outputs", default="/nobackup1/jbrown/annotation/blasts/")
 @click.option('--genomedir', help="where phage genomes are found")
+@click.option('--nvp', help='indicate whether protein files follow nvp naming scheme', default=True, show_default=True)
 def trnascan_from_dir(outdir, genomedir):
     fastas = glob.glob(op.join(genomedir, "*.f*a"))
-    phage_list = [".".join(op.basename(i).split(".")[:3]) for i in fastas]
+    if nvp is True:
+        phage_list = [".".join(op.basename(i).split(".")[:3]) for i in fastas]
+    else:
+        phage_list = [i.split(".")[0] for i in fastas]
+
     run_prodigals(phage_list, outdir, genomedir)
 
 

@@ -39,8 +39,17 @@ def write_gff3s(phage_list, output_dir, prod_dir, prot_dir, genome_dir, blast_di
 @click.option('--ublast_path', help="where ublast executable found", default='/home/sbiller/usearch7.0.1090_i86linux64', show_default=True)
 @click.option('--ublast_evalue', help='evalue to use for ublast', default='1e-5', show_default=True)
 @click.option('--path-to-crt', help='location of crt executable', default="/home/jbrown/programs/CRT1.2-CLI.jar", show_default=True)
+@click.option("--nvp",
+                help="True if this phage is formatted like a nahant vibriophage (#.###.X) e.g. 1.028.A, otherwise, phage name assumed to be everything before first '.' e.g. for file /genomedir/phage1.fasta, the name is 'phage1'",
+                default=True, show_default=True
+                )
 def run_all(phage_list, genome_dir, outdir, blast_databasedir, ublast_path, ublast_evalue, path_to_crt):
     print("Running prodigal now")
+
+    if nvp is True:
+        prefix = "NVP"
+    else:
+        prefix = "CDS"
     prod_dir, prot_dir, fna_dir = run_prodigals(phage_list, outdir, genome_dir)
 
     blast_dir = op.join(outdir, "blasts")
@@ -57,11 +66,11 @@ def run_all(phage_list, genome_dir, outdir, blast_databasedir, ublast_path, ubla
 
     gff_dir = op.join(outdir, 'gff3')
     print("Writing results to gff3")
-    gff_dir = write_gff3s(phage_list, gff_dir, prod_dir, prot_dir, genome_dir, blast_dir, trna_dir, crt_dir, cov_threshold=75)
+    gff_dir = write_gff3s(phage_list, gff_dir, prod_dir, prot_dir, genome_dir, blast_dir, trna_dir, crt_dir, cov_threshold=75, prefix=prefix)
 
 
 @cli.command("genome-dir-runall", short_help="indicate directory where all genomes are found as fasta files (all files in directory will be annotated)")
-@click.option('--outdir', help="where to send blast outputs")
+@click.option('--outdir', help="where to send outputs")
 @click.option('--genome-dir', help="where to find genomic contigs in fasta format")
 @click.option('--blast_databasedir', help="where to find the blast databases", default='/nobackup1/jbrown/annotation/databases', show_default=True)
 @click.option('--ublast_path', help="where ublast executable found", default='/home/sbiller/usearch7.0.1090_i86linux64', show_default=True)
@@ -76,14 +85,18 @@ def run_all_dir(genome_dir, outdir, blast_databasedir, ublast_path, ublast_evalu
 
     if nvp is True:
         phage_list = [".".join(op.basename(i).split(".")[:3]) for i in fastas]
+        prefix = "NVP"
     else:
         phage_list = [i.split(".")[0] for i in fastas]
+        prefix = "CDS"
 
     print("Running prodigal now")
+    #run_prodigals(phage_names, outdir, genome_dir)
     prod_dir, prot_dir, fna_dir = run_prodigals(phage_list, outdir, genome_dir)
 
     blast_dir = op.join(outdir, "blasts")
     print("Running blasts now")
+    #run_ublasts(phage_list, outdir, databasedir, proteindir, ublast_path='/home/sbiller/usearch7.0.1090_i86linux64', evalue='1e-5'):
     blast_dir = run_ublasts(phage_list, blast_dir, blast_databasedir, prot_dir, ublast_path, ublast_evalue)
 
     trna_dir = op.join(outdir, 'trna')
@@ -96,7 +109,7 @@ def run_all_dir(genome_dir, outdir, blast_databasedir, ublast_path, ublast_evalu
 
     gff_dir = op.join(outdir, 'gff3')
     print("Writing results to gff3")
-    gff_dir = write_gff3s(phage_list, gff_dir, prod_dir, prot_dir, genome_dir, blast_dir, trna_dir, crt_dir, cov_threshold=75)
+    gff_dir = write_gff3s(phage_list, gff_dir, prod_dir, prot_dir, genome_dir, blast_dir, trna_dir, crt_dir, cov_threshold=75, prefix=prefix)
 
 
 @cli.command("write-gff3s", short_help='write gff3 files given all appropriate input directories')

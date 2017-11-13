@@ -15,9 +15,10 @@ def cli(obj):
 
 def run_trna_scan(input_file, output):
     if os.path.exists(output):
-        os.remove(output)
-    args=["tRNAscan-SE", "-o", output, "-G", "-D", input_file]
-    subprocess.call(args)
+        return ouput
+    else:
+        args=["tRNAscan-SE", "-o", output, "-G", "-D", input_file]
+        subprocess.call(args)
 
 def prep_outdir(out_path):
     if op.exists(out_path) == False:
@@ -42,12 +43,16 @@ def trnascan_from_list(phage_list, outdir, genomedir):
     run_trna_scans(phage_list, outdir, genomedir)
 
 
-@cli.command("from-genomedir", short_help="provide space separated list of phages to blast")
+@cli.command("from-genomedir", short_help="find genomes within indicated genome directory")
 @click.option('--outdir', help="where to send blast outputs", default="/nobackup1/jbrown/annotation/blasts/")
 @click.option('--genomedir', help="where phage genomes are found")
-def trnascan_from_dir(outdir, genomedir):
+@click.option('--nvp', help='indicate whether protein files follow nvp naming scheme', default=True, show_default=True)
+def trnascan_from_dir(outdir, genomedir, nvp):
     fastas = glob.glob(op.join(genomedir, "*.f*a"))
-    phage_list = [".".join(op.basename(i).split(".")[:3]) for i in fastas]
+    if nvp is True:
+        phage_list = [".".join(op.basename(i).split(".")[:3]) for i in fastas]
+    else:
+        phage_list = [i.split(".")[0] for i in fastas]
     run_trna_scans(phage_list, outdir, genomedir)
 
 

@@ -7,7 +7,7 @@ import os.path as op
 import click
 
 '''
-phage_ublast_all.py --outdir /nobackup1/jbrown/newmu/blasts/ --proteindir /nobackup1/jbrown/newmu/proteins/ 1.028.O
+phage_ublast_all.py phage-list --outdir /nobackup1/jbrown/newmu/blasts/ --proteindir /nobackup1/jbrown/newmu/proteins/ 1.028.O
 '''
 
 @click.group(context_settings=dict(help_option_names=['-h', '--help']))
@@ -39,7 +39,11 @@ def run_ublasts(phage_list, outdir, databasedir, proteindir, ublast_path='/home/
             udb = op.join(databasedir, udbs[i])
             dbname = dbnames[i]
             print("running a ublast comparison of {} against {}".format(phage_proteins, udb))
-            run_ublastp(fastafile=phage_proteins, udb=udb, out=op.join(outdir, dbname, p + "vs."+dbname+".out"), evalue=evalue, ublast_path=ublast_path)
+            out_blast = op.join(outdir, dbname, p + "vs."+dbname+".out"
+            if op.exists(out_blast):
+                continue
+            else:
+                run_ublastp(fastafile=phage_proteins, udb=udb, out=op.join(outdir, dbname, p + "vs."+dbname+".out"), evalue=evalue, ublast_path=ublast_path)
     return outdir
 
 
@@ -53,13 +57,18 @@ def main(phage_list, outdir, databasedir, proteindir):
     run_ublasts(phage_list, outdir, databasedir, proteindir)
 
 
-@cli.command("from-proteindir", short_help="provide space separated list of phages to blast")
+@cli.command("from-proteindir", short_help="find proteomes within indicated protein directory")
 @click.option('--outdir', help="where to send blast outputs", default="/nobackup1/jbrown/annotation/blasts/")
 @click.option('--databasedir', help="where to find the blast databases", default='/nobackup1/jbrown/annotation/databases')
 @click.option('--proteindir', help="where phage proteins are found")
-def main_alldir(outdir, databasedir, proteindir):
+@click.option('--nvp', help='indicate whether protein files follow nvp naming scheme', default=True, show_default=True)
+def main_alldir(outdir, databasedir, proteindir, nvp):
     fastas = glob.glob(op.join(proteindir, "*.f*a"))
-    phage_list = [".".join(op.basename(i).split(".")[:3])+"." for i in fastas]
+    if nvp is True:
+        phage_list = [".".join(op.basename(i).split(".")[:3]) for i in fastas]
+    else:
+        phage_list = [i.split(".")[0] for i in fastas]
+
     run_ublasts(phage_list, outdir, databasedir, proteindir)
 
 
