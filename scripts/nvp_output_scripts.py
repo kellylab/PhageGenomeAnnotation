@@ -166,7 +166,7 @@ def tRNA_scan_to_gff3(phage, trna_path="/nobackup1/jbrown/annotation/trna"):
                 aa=l[4]
                 anticodon=l[5]
                 SeqID=l[0]
-                col9="ID=tRNA-" + aa + ", anticodon=" + anticodon
+                col9="ID=tRNA-" + aa + "; anticodon=" + anticodon
                 out=SeqID+"\t"+"tRNAScanSE"+"\t"+"tRNA"+"\t"+start+"\t"+stop+"\t"+l[-1].replace("\n","")+"\t"+strand+"\t"+"0"+"\t"+col9+"\n"
                 tanns+=out
         return tanns
