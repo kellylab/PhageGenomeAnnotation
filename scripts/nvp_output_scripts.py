@@ -22,8 +22,8 @@ def get_prod_cds_info(i, prod, digits, phage):
             strand="+"
             start=loc.split()[1].split("..")[0]
             stop=loc.split()[1].split("..")[1].replace("\n","")
-        start=start.replace(">","").replace("<","")
-        stop=stop.replace(">","").replace("<","")
+        start=start
+        stop=stop
     info=prod[i+1]
     number=info.split(";")[0].split("=")[2].split("_")[1]
     z="0"*(digits-len(number))
@@ -129,19 +129,23 @@ def cds_blast_annotations_to_gff3(phage, prod_path, faa_path, blast_path, cov_th
 def CRISPR_gff3(phage, crt_path="/nobackup1/jbrown/annotation/crt/"):
     crt_output=op.join(crt_path, phage+".crt")
     with open(crt_output) as cout:
-        crtout = cout.readlines()
-        name=phage
-        SeqID=crtout[0].split()[1]
-        out=""
-        for line in crtout:
-            if line.startswith("CRISPR"):
-                vec=line.split()
-                number=vec[1]
-                start=vec[3]
-                stop=vec[5]
-                ID="NVP"+name.replace(".","")+"_CRISPR-like_"+number
-                out+=SeqID+"\t"+"crt"+"\tputative CRISPR feature\t%s\t%s\t.\t.\t.\tID=%s" % (start, stop, ID)
-                out+=", note=CRISPR region\n"
+    num = 0
+    crtout = cout.readlines()
+    name=phage
+    SeqID=crtout[0].split()[1]
+    out=""
+    for i, line in enumerate(crtout):
+        if "[" in line:
+            num += 1
+            vec = line.strip().split("\t")
+            start = vec[0]
+            repeat_end = int(vec[4].split(",")[0].replace('[ ',""))
+            spacer_end = int(vec[4].split(",")[1].replace(']',"").replace(" ",""))
+            crispr_start = int(start) + repeat_end
+            crispr_stop = int(crispr_start) + spacer_end
+            ID="NVP"+name.replace(".","")+"_CRISPR_spacer_"+str(num)
+            out+=SeqID+"\t"+"crt"+"\tncRNA\t%s\t%s\t.\t.\t.\tID=%s" % (crispr_start, crispr_stop, ID)
+            out+=", note=CRISPR spacer {num}\n".format(num=num)
     return out
 
 def tRNA_scan_to_gff3(phage, trna_path="/nobackup1/jbrown/annotation/trna"):
