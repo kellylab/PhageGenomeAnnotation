@@ -129,23 +129,23 @@ def cds_blast_annotations_to_gff3(phage, prod_path, faa_path, blast_path, cov_th
 def CRISPR_gff3(phage, crt_path="/nobackup1/jbrown/annotation/crt/"):
     crt_output=op.join(crt_path, phage+".crt")
     with open(crt_output) as cout:
-    num = 0
-    crtout = cout.readlines()
-    name=phage
-    SeqID=crtout[0].split()[1]
-    out=""
-    for i, line in enumerate(crtout):
-        if "[" in line:
-            num += 1
-            vec = line.strip().split("\t")
-            start = vec[0]
-            repeat_end = int(vec[4].split(",")[0].replace('[ ',""))
-            spacer_end = int(vec[4].split(",")[1].replace(']',"").replace(" ",""))
-            crispr_start = int(start) + repeat_end
-            crispr_stop = int(crispr_start) + spacer_end
-            ID="NVP"+name.replace(".","")+"_CRISPR_spacer_"+str(num)
-            out+=SeqID+"\t"+"crt"+"\tncRNA\t%s\t%s\t.\t.\t.\tID=%s" % (crispr_start, crispr_stop, ID)
-            out+='ncRNA_class="scRNA"; note=CRISPR spacer {num}\n'.format(num=num)
+        num = 0
+        crtout = cout.readlines()
+        name=phage
+        SeqID=crtout[0].split()[1]
+        out=""
+        for i, line in enumerate(crtout):
+            if "[" in line:
+                num += 1
+                vec = line.strip().split("\t")
+                start = vec[0]
+                repeat_end = int(vec[4].split(",")[0].replace('[ ',""))
+                spacer_end = int(vec[4].split(",")[1].replace(']',"").replace(" ",""))
+                crispr_start = int(start) + repeat_end
+                crispr_stop = int(crispr_start) + spacer_end
+                ID="NVP"+name.replace(".","")+"_CRISPR_spacer_"+str(num)
+                out+=SeqID+"\t"+"crt"+"\tncRNA\t%s\t%s\t.\t.\t.\tID=%s" % (crispr_start, crispr_stop, ID)
+                out+='ncRNA_class="scRNA"; note=CRISPR spacer {num}\n'.format(num=num)
     return out
 
 def tRNA_scan_to_gff3(phage, trna_path="/nobackup1/jbrown/annotation/trna"):
