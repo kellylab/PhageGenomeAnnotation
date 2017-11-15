@@ -145,7 +145,7 @@ def CRISPR_gff3(phage, crt_path="/nobackup1/jbrown/annotation/crt/"):
             crispr_stop = int(crispr_start) + spacer_end
             ID="NVP"+name.replace(".","")+"_CRISPR_spacer_"+str(num)
             out+=SeqID+"\t"+"crt"+"\tncRNA\t%s\t%s\t.\t.\t.\tID=%s" % (crispr_start, crispr_stop, ID)
-            out+=", note=CRISPR spacer {num}\n".format(num=num)
+            out+='ncRNA_class="scRNA"; note=CRISPR spacer {num}\n'.format(num=num)
     return out
 
 def tRNA_scan_to_gff3(phage, trna_path="/nobackup1/jbrown/annotation/trna"):
@@ -166,7 +166,7 @@ def tRNA_scan_to_gff3(phage, trna_path="/nobackup1/jbrown/annotation/trna"):
                 aa=l[4]
                 anticodon=l[5]
                 SeqID=l[0]
-                col9="ID="+locus_tag+", aa="+aa+", anticodon="+anticodon
+                col9="ID=tRNA-" + aa + ", anticodon=" + anticodon
                 out=SeqID+"\t"+"tRNAScanSE"+"\t"+"tRNA"+"\t"+start+"\t"+stop+"\t"+l[-1].replace("\n","")+"\t"+strand+"\t"+"0"+"\t"+col9+"\n"
                 tanns+=out
         return tanns
