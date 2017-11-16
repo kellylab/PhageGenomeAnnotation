@@ -137,9 +137,10 @@ def cds_blast_annotations_to_gff3(phage, prod_path, faa_path, blast_path, cov_th
 
             #set up col9
             col9="ID="+locus_tag
-            if start != coords[4]:
+            if start != str(coords[4]):
                 col9 += "; codon start=%s" % coords[4]
-            elif stop != coords[5]:
+
+            if stop != str(coords[5]):
                 col9 += "; codon start=%s" % coords[5]
             #ID best hit:
             best_hits=find_best_hit2(locus_tag, blast_dict)
