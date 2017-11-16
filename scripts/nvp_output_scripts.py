@@ -22,8 +22,15 @@ def get_prod_cds_info(i, prod, digits, phage, genome_len):
             start=loc.split("(")[1].split("..")[0]
             if ">" in start:
                 start = start.replace(">","")
-                start_prefix = "<"
+                start_prefix = ">"
+            elif "<" in start:
+                start = start.replace("<","")
+                start_prefix=">"
+
             if ">" in stop:
+                stop = stop.replace(">","")
+                stop_prefix = "<"
+            elif "<" in stop:
                 stop = stop.replace(">","")
                 stop_prefix = "<"
         else:
@@ -35,18 +42,18 @@ def get_prod_cds_info(i, prod, digits, phage, genome_len):
                 start_prefix = "<"
             elif ">" in start:
                 start = start.replace(">","")
-                start_prefix = ">"
+                start_prefix = "<"
 
             if "<" in stop:
                 stop = stop.replace("<","")
-                stop_prefix = "<"
+                stop_prefix = ">"
 
             elif ">" in stop:
                 stop = stop.replace(">","")
                 stop_prefix = ">"
 
-        start=int(start)
-        stop=int(stop)
+        start=start
+        stop=stop
         real_start = start
         real_stop = stop
     '''if len(start_prefix) == 1:
