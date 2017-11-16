@@ -11,28 +11,55 @@ for i in range (2, len(open(prod_file).readlines())-1,2):
     get_prod_cds_info(i,...)
 '''
 
-def get_prod_cds_info(i, prod, digits, phage):
+def get_prod_cds_info(i, prod, digits, phage, genome_len):
     loc=prod[i]
     if len(loc.split())==2:
+        start_prefix = ""
+        stop_prefix = ""
         if "complement" in prod[i].split()[1]:
             strand="-"
             stop=loc.split("..")[1].replace(")\n","")
             start=loc.split("(")[1].split("..")[0]
             if ">" in start:
-                start = start.replace(">","<")
+                start = start.replace(">","")
+                start_prefix = "<"
             if ">" in stop:
-                stop = stop.replace(">","<")
+                stop = stop.replace(">","")
+                stop_prefix = "<"
         else:
             strand="+"
             start=loc.split()[1].split("..")[0]
             stop=loc.split()[1].split("..")[1].replace("\n","")
-        start=start
-        stop=stop
+            if "<" in start:
+                start = start.replace("<","")
+                start_prefix = "<"
+
+            if "<" in stop:
+                stop = stop.replace("<","")
+                stop_prefix = "<"
+        start=int(start)
+        stop=int(stop)
+    if len(start_prefix) == 1:
+        if start < 4:
+            start = 1
+        elif start > (genome_len - 4):
+            start = genome_len
+        else:
+            print("EXCEPTION FOUND")
+    if len(stop_prefix) == 1:
+        if stop < 4:
+            stop = 1
+        elif stop > (genome_len - 4):
+            stop = genome_len
+        else:
+            print('EXCEPTION FOUND')
+    start_all = "{}{}".format(start_prefix, start)
+    stop_all = "{}{}".format(stop_prefix, stop)
     info=prod[i+1]
     number=info.split(";")[0].split("=")[2].split("_")[1]
     z="0"*(digits-len(number))
     t="NVP"+phage.replace(".","")+"_"+z+number
-    return [t, start, stop, strand]
+    return [t, start_all, stop_all, strand]
 
 #below: considers hits to more informative databases before less informative databases
 #dict_list* are lists of blast_dicts and dl*_names are the names of the dicts in the same order
@@ -94,10 +121,11 @@ def cds_blast_annotations_to_gff3(phage, prod_path, faa_path, blast_path, cov_th
     with open(prod) as ih:
         prod= ih.readlines()
         digits=get_digits(faa)
+        seq_len = int(prod[0].split(";")[1].split("=")[1])
         #write gff3 lines from prodigal files and blast dicts:
         for i in range(2,len(prod)-1,2):
 
-            coords=get_prod_cds_info(i, prod, digits, phage)
+            coords=get_prod_cds_info(i, prod, digits, phage, seq_len)
             locus_tag=coords[0]
             start=coords[1]
             stop=coords[2]
@@ -245,10 +273,12 @@ def cds_blast_annotations_to_table(phage, prod_path, faa_path, blast_path, cov_t
     with open(prod) as ih:
         prod = ih.readlines()
         digits=get_digits(faa)
+        seq_len = int(prod[0].split(";")[1].split("=")[1])
+
         #write lines from prodigal files and blast dicts:
         for i in range(2,len(prod)-1,2):
             out+=Sequence+"\t"
-            coords=get_prod_cds_info(i, prod, digits, phage)
+            coords=get_prod_cds_info(i, prod, digits, phage, seq_len)
             locus_tag=coords[0]
             start=coords[1]
             stop=coords[2]
@@ -302,6 +332,7 @@ def kegg_egg_pog_tbl(phage, cov_thresh=75):
     #run through annotations of each prodigal-identified CDS:
     prod=open(prod).readlines()
     digits=get_digits(faa)
+    seq_len = int(prod[0].split(";")[1].split("=")[1])
 
     #write lines from prodigal files and blast dicts:
     for i in range(2,len(prod)-1,2):
@@ -309,7 +340,7 @@ def kegg_egg_pog_tbl(phage, cov_thresh=75):
         out+=Sequence+"\t"
 
 
-        locus_tag=get_prod_cds_info(i, prod, digits, phage)[0]
+        locus_tag=get_prod_cds_info(i, prod, digits, phage, seq_len)[0]
         #col2
         out+=locus_tag+"\t"
 
