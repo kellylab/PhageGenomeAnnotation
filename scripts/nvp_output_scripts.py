@@ -41,7 +41,7 @@ def get_prod_cds_info(i, prod, digits, phage, genome_len):
         stop=int(stop)
         real_start = start
         real_stop = stop
-    if len(start_prefix) == 1:
+    '''if len(start_prefix) == 1:
         if start < 4:
 
             start = 1
@@ -56,7 +56,7 @@ def get_prod_cds_info(i, prod, digits, phage, genome_len):
         elif stop > (genome_len - 4):
             stop = genome_len
         else:
-            print('EXCEPTION FOUND')
+            print('EXCEPTION FOUND')'''
     start_all = "{}{}".format(start_prefix, start)
     stop_all = "{}{}".format(stop_prefix, stop)
     info=prod[i+1]
@@ -137,11 +137,11 @@ def cds_blast_annotations_to_gff3(phage, prod_path, faa_path, blast_path, cov_th
 
             #set up col9
             col9="ID="+locus_tag
-            if start != str(coords[4]):
-                col9 += "; codon start=%s" % coords[4]
+            #if start != str(coords[4]):
+            #    col9 += "; codon start=%s" % coords[4]
 
-            if stop != str(coords[5]):
-                col9 += "; codon start=%s" % coords[5]
+            #if stop != str(coords[5]):
+            #    col9 += "; codon start=%s" % coords[5]
             #ID best hit:
             best_hits=find_best_hit2(locus_tag, blast_dict)
 
@@ -203,12 +203,11 @@ def tRNA_scan_to_gff3(phage, trna_path="/nobackup1/jbrown/annotation/trna"):
                     strand="+"
                 else:
                     strand="-"
-                if l[4] == "Undet":
+                if l[4] == "Undet" or l[4] == "Sup":
                     aa = "Xxx"
-                    anticodon = "XXX"
                 else:
                     aa=l[4]
-                    anticodon=l[5]
+                anticodon=l[5]
                 SeqID=l[0]
                 col9="ID=tRNA-" + aa + '; note=anticodon:' + anticodon
                 out=SeqID+"\t"+"tRNAScanSE"+"\t"+"tRNA"+"\t"+start+"\t"+stop+"\t"+l[-1].replace("\n","")+"\t"+strand+"\t"+"0"+"\t"+col9+"\n"
