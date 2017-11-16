@@ -39,10 +39,14 @@ def get_prod_cds_info(i, prod, digits, phage, genome_len):
                 stop_prefix = "<"
         start=int(start)
         stop=int(stop)
+        real_start = start
+        real_stop = stop
     if len(start_prefix) == 1:
         if start < 4:
+
             start = 1
         elif start > (genome_len - 4):
+
             start = genome_len
         else:
             print("EXCEPTION FOUND")
@@ -59,7 +63,7 @@ def get_prod_cds_info(i, prod, digits, phage, genome_len):
     number=info.split(";")[0].split("=")[2].split("_")[1]
     z="0"*(digits-len(number))
     t="NVP"+phage.replace(".","")+"_"+z+number
-    return [t, start_all, stop_all, strand]
+    return [t, start_all, stop_all, strand, real_start, real_stop]
 
 #below: considers hits to more informative databases before less informative databases
 #dict_list* are lists of blast_dicts and dl*_names are the names of the dicts in the same order
@@ -133,7 +137,10 @@ def cds_blast_annotations_to_gff3(phage, prod_path, faa_path, blast_path, cov_th
 
             #set up col9
             col9="ID="+locus_tag
-
+            if start != coords[4]:
+                col9 += "codon start=%s" % coords[4]
+            elif stop != coords[5]:
+                col9 += "codon start=%s" % coords[5]
             #ID best hit:
             best_hits=find_best_hit2(locus_tag, blast_dict)
 
