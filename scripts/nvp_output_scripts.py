@@ -18,6 +18,10 @@ def get_prod_cds_info(i, prod, digits, phage):
             strand="-"
             stop=loc.split("..")[1].replace(")\n","")
             start=loc.split("(")[1].split("..")[0]
+            if ">" in start:
+                start = start.replace(">","<")
+            if ">" in stop:
+                stop = stop.replace(">","<")
         else:
             strand="+"
             start=loc.split()[1].split("..")[0]
@@ -163,10 +167,14 @@ def tRNA_scan_to_gff3(phage, trna_path="/nobackup1/jbrown/annotation/trna"):
                     strand="+"
                 else:
                     strand="-"
-                aa=l[4]
-                anticodon=l[5]
+                if l[4] == "Undet":
+                    aa = "Xxx"
+                    anticodon = "XXX"
+                else:
+                    aa=l[4]
+                    anticodon=l[5]
                 SeqID=l[0]
-                col9="ID=tRNA-" + aa + "; anticodon=" + anticodon
+                col9="ID=tRNA-" + aa + '; note=anticodon:' + anticodon
                 out=SeqID+"\t"+"tRNAScanSE"+"\t"+"tRNA"+"\t"+start+"\t"+stop+"\t"+l[-1].replace("\n","")+"\t"+strand+"\t"+"0"+"\t"+col9+"\n"
                 tanns+=out
         return tanns
