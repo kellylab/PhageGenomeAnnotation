@@ -52,26 +52,33 @@ def get_prod_cds_info(i, prod, digits, phage, genome_len):
                 stop = stop.replace(">","")
                 stop_prefix = ">"
 
-        start=start
-        stop=stop
-        real_start = start
-        real_stop = stop
-    '''if len(start_prefix) == 1:
+        start=int(start)
+        stop=int(stop)
+        real_start = int(start)
+        real_stop = int(stop)
+
+    if len(start_prefix) == 1:
         if start < 4:
-
+            print("start is less than 4")
             start = 1
-        elif start > (genome_len - 4):
 
+        elif start > (genome_len - 4):
+            print("start is greater than the genome length")
+            print(start)
+            print(genome_len - 4)
             start = genome_len
+
         else:
             print("EXCEPTION FOUND")
     if len(stop_prefix) == 1:
         if stop < 4:
+            print("stop is less than 4")
             stop = 1
         elif stop > (genome_len - 4):
+            print("stop is greater than the genome length")
             stop = genome_len
         else:
-            print('EXCEPTION FOUND')'''
+            print('EXCEPTION FOUND')
     start_all = "{}{}".format(start_prefix, start)
     stop_all = "{}{}".format(stop_prefix, stop)
     info=prod[i+1]
@@ -152,11 +159,15 @@ def cds_blast_annotations_to_gff3(phage, prod_path, faa_path, blast_path, cov_th
 
             #set up col9
             col9="ID="+locus_tag
-            #if start != str(coords[4]):
-            #    col9 += "; codon start=%s" % coords[4]
 
-            #if stop != str(coords[5]):
-            #    col9 += "; codon start=%s" % coords[5]
+            ### CHANGED:
+            if str(start) != str(coords[4]) and strand == "+":
+                col9 += "; codon start=%s" % coords[4]
+
+            if str(stop) != str(coords[5]) and strand == '-':
+                col9 += "; codon start=%s" % coords[5]
+            ### CHANGED OVER
+
             #ID best hit:
             best_hits=find_best_hit2(locus_tag, blast_dict)
 
