@@ -25,7 +25,7 @@ pog_blast_path="/nobackup1/jbrown/annotation/blasts/pog/"
 
 def get_blast_paths(blastdir):
     '''returns [aclame_blast_path, cog_blast_path, cvp_blast_path, eggnog_blast_path, pfam_blast_path, pog_blast_path, tara_blast_path, keg_blast_path]'''
-    dbnames=["aclame","cogs_2003-2004","CVP","eggnog","Pfam","pog","tara.translated","kegg"]
+    dbnames=["aclame","cogs_2003-2014","CVP","eggnog","Pfam","pog","tara.translated","kegg"]
     return [op.join(blastdir, i) for i in dbnames]
 
 def get_digits(faa):
@@ -306,7 +306,7 @@ def load_blast_files(phage, prod_path, faa_path, blast_path, cov_thresh=75):
 
     [aclame_blast_path, cog_blast_path, cvp_blast_path, eggnog_blast_path, pfam_blast_path, pog_blast_path, tara_blast_path, keg_blast_path] = get_blast_paths(blast_path)
 
-    cog_blast=op.join(cog_blast_path,phage+".vs.cogs_2003-2004.out")
+    cog_blast=op.join(cog_blast_path,phage+".vs.cogs_2003-2014.out")
     aclame_blast=op.join(aclame_blast_path,phage+".vs.aclame.out")
     cvp_blast=op.join(cvp_blast_path,phage+".vs.CVP.out")
     kegg_blast=op.join(kegg_blast_path,phage+".vs.kegg.out")

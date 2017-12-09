@@ -23,7 +23,7 @@ def write_gff3s(phage_list, output_dir, prod_dir, prot_dir, genome_dir, blast_di
     for phage in phage_list:
         output_file = op.join(output_dir, '{}.gff3'.format(phage))
         if op.exists(output_file) and overwrite == False:
-            return output_dir
+            continue
 
         # write_gff3_file(phage, output_file, prod_path, faa_path, genome_path, blast_path, trna_path, crt_path, cov_thresh=75):
         else:

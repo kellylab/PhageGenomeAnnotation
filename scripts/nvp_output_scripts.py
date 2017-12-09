@@ -11,24 +11,81 @@ for i in range (2, len(open(prod_file).readlines())-1,2):
     get_prod_cds_info(i,...)
 '''
 
-def get_prod_cds_info(i, prod, digits, phage):
+def get_prod_cds_info(i, prod, digits, phage, genome_len):
     loc=prod[i]
     if len(loc.split())==2:
+        start_prefix = ""
+        stop_prefix = ""
         if "complement" in prod[i].split()[1]:
             strand="-"
             stop=loc.split("..")[1].replace(")\n","")
             start=loc.split("(")[1].split("..")[0]
+            if ">" in start:
+                start = start.replace(">","")
+                start_prefix = ">"
+            elif "<" in start:
+                start = start.replace("<","")
+                start_prefix=">"
+
+            if ">" in stop:
+                stop = stop.replace(">","")
+                stop_prefix = "<"
+            elif "<" in stop:
+                stop = stop.replace(">","")
+                stop_prefix = "<"
         else:
             strand="+"
             start=loc.split()[1].split("..")[0]
             stop=loc.split()[1].split("..")[1].replace("\n","")
-        start=start.replace(">","").replace("<","")
-        stop=stop.replace(">","").replace("<","")
+            if "<" in start:
+                start = start.replace("<","")
+                start_prefix = "<"
+            elif ">" in start:
+                start = start.replace(">","")
+                start_prefix = "<"
+
+            if "<" in stop:
+                stop = stop.replace("<","")
+                stop_prefix = ">"
+
+            elif ">" in stop:
+                stop = stop.replace(">","")
+                stop_prefix = ">"
+
+        start=int(start)
+        stop=int(stop)
+        real_start = int(start)
+        real_stop = int(stop)
+
+    if len(start_prefix) == 1:
+        if start < 4:
+            print("start is less than 4")
+            start = 1
+
+        elif start > (genome_len - 4):
+            print("start is greater than the genome length")
+            print(start)
+            print(genome_len - 4)
+            start = genome_len
+
+        else:
+            print("EXCEPTION FOUND")
+    if len(stop_prefix) == 1:
+        if stop < 4:
+            print("stop is less than 4")
+            stop = 1
+        elif stop > (genome_len - 4):
+            print("stop is greater than the genome length")
+            stop = genome_len
+        else:
+            print('EXCEPTION FOUND')
+    start_all = "{}{}".format(start_prefix, start)
+    stop_all = "{}{}".format(stop_prefix, stop)
     info=prod[i+1]
     number=info.split(";")[0].split("=")[2].split("_")[1]
     z="0"*(digits-len(number))
     t="NVP"+phage.replace(".","")+"_"+z+number
-    return [t, start, stop, strand]
+    return [t, start_all, stop_all, strand, real_start, real_stop]
 
 #below: considers hits to more informative databases before less informative databases
 #dict_list* are lists of blast_dicts and dl*_names are the names of the dicts in the same order
@@ -90,10 +147,11 @@ def cds_blast_annotations_to_gff3(phage, prod_path, faa_path, blast_path, cov_th
     with open(prod) as ih:
         prod= ih.readlines()
         digits=get_digits(faa)
+        seq_len = int(prod[0].split(";")[1].split("=")[1])
         #write gff3 lines from prodigal files and blast dicts:
         for i in range(2,len(prod)-1,2):
 
-            coords=get_prod_cds_info(i, prod, digits, phage)
+            coords=get_prod_cds_info(i, prod, digits, phage, seq_len)
             locus_tag=coords[0]
             start=coords[1]
             stop=coords[2]
@@ -101,6 +159,14 @@ def cds_blast_annotations_to_gff3(phage, prod_path, faa_path, blast_path, cov_th
 
             #set up col9
             col9="ID="+locus_tag
+
+            ### CHANGED:
+            if str(start) != str(coords[4]) and strand == "+":
+                col9 += "; codon start=%s" % coords[4]
+
+            if str(stop) != str(coords[5]) and strand == '-':
+                col9 += "; codon start=%s" % coords[5]
+            ### CHANGED OVER
 
             #ID best hit:
             best_hits=find_best_hit2(locus_tag, blast_dict)
@@ -129,19 +195,23 @@ def cds_blast_annotations_to_gff3(phage, prod_path, faa_path, blast_path, cov_th
 def CRISPR_gff3(phage, crt_path="/nobackup1/jbrown/annotation/crt/"):
     crt_output=op.join(crt_path, phage+".crt")
     with open(crt_output) as cout:
+        num = 0
         crtout = cout.readlines()
         name=phage
         SeqID=crtout[0].split()[1]
         out=""
-        for line in crtout:
-            if line.startswith("CRISPR"):
-                vec=line.split()
-                number=vec[1]
-                start=vec[3]
-                stop=vec[5]
-                ID="NVP"+name.replace(".","")+"_CRISPR-like_"+number
-                out+=SeqID+"\t"+"crt"+"\tputative CRISPR feature\t%s\t%s\t.\t.\t.\tID=%s" % (start, stop, ID)
-                out+=", note=CRISPR region\n"
+        for i, line in enumerate(crtout):
+            if "[" in line:
+                num += 1
+                vec = line.strip().split("\t")
+                start = vec[0]
+                repeat_end = int(vec[4].split(",")[0].replace('[ ',""))
+                spacer_end = int(vec[4].split(",")[1].replace(']',"").replace(" ",""))
+                crispr_start = int(start) + repeat_end
+                crispr_stop = int(crispr_start) + spacer_end
+                ID="NVP"+name.replace(".","")+"_CRISPR_spacer_"+str(num)
+                out+=SeqID+"\t"+"crt"+"\tncRNA\t%s\t%s\t.\t.\t.\tID=%s" % (crispr_start, crispr_stop, ID)
+                out+='ncRNA_class="scRNA"; note=CRISPR spacer {num}\n'.format(num=num)
     return out
 
 def tRNA_scan_to_gff3(phage, trna_path="/nobackup1/jbrown/annotation/trna"):
@@ -159,10 +229,13 @@ def tRNA_scan_to_gff3(phage, trna_path="/nobackup1/jbrown/annotation/trna"):
                     strand="+"
                 else:
                     strand="-"
-                aa=l[4]
+                if l[4] == "Undet" or l[4] == "Sup":
+                    aa = "Xxx"
+                else:
+                    aa=l[4]
                 anticodon=l[5]
                 SeqID=l[0]
-                col9="ID="+locus_tag+", aa="+aa+", anticodon="+anticodon
+                col9="ID=tRNA-" + aa + '; note=anticodon:' + anticodon
                 out=SeqID+"\t"+"tRNAScanSE"+"\t"+"tRNA"+"\t"+start+"\t"+stop+"\t"+l[-1].replace("\n","")+"\t"+strand+"\t"+"0"+"\t"+col9+"\n"
                 tanns+=out
         return tanns
@@ -233,10 +306,12 @@ def cds_blast_annotations_to_table(phage, prod_path, faa_path, blast_path, cov_t
     with open(prod) as ih:
         prod = ih.readlines()
         digits=get_digits(faa)
+        seq_len = int(prod[0].split(";")[1].split("=")[1])
+
         #write lines from prodigal files and blast dicts:
         for i in range(2,len(prod)-1,2):
             out+=Sequence+"\t"
-            coords=get_prod_cds_info(i, prod, digits, phage)
+            coords=get_prod_cds_info(i, prod, digits, phage, seq_len)
             locus_tag=coords[0]
             start=coords[1]
             stop=coords[2]
@@ -290,6 +365,7 @@ def kegg_egg_pog_tbl(phage, cov_thresh=75):
     #run through annotations of each prodigal-identified CDS:
     prod=open(prod).readlines()
     digits=get_digits(faa)
+    seq_len = int(prod[0].split(";")[1].split("=")[1])
 
     #write lines from prodigal files and blast dicts:
     for i in range(2,len(prod)-1,2):
@@ -297,7 +373,7 @@ def kegg_egg_pog_tbl(phage, cov_thresh=75):
         out+=Sequence+"\t"
 
 
-        locus_tag=get_prod_cds_info(i, prod, digits, phage)[0]
+        locus_tag=get_prod_cds_info(i, prod, digits, phage, seq_len)[0]
         #col2
         out+=locus_tag+"\t"
 
