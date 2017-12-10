@@ -162,10 +162,11 @@ def cds_blast_annotations_to_gff3(phage, prod_path, faa_path, blast_path, cov_th
 
             ### CHANGED:
             if str(start) != str(coords[4]) and strand == "+":
-                col9 += "; codon start=%s" % coords[4]
+                col9 += "; codon_start=%s" % coords[4]
 
             if str(stop) != str(coords[5]) and strand == '-':
-                col9 += "; codon start=%s" % coords[5]
+                new_val = stop - coords[5] + 1
+                col9 += "; codon_start=%s" % coords[5]
             ### CHANGED OVER
 
             #ID best hit:
@@ -225,7 +226,7 @@ def tRNA_scan_to_gff3(phage, trna_path="/nobackup1/jbrown/annotation/trna"):
                 locus_tag="NVP"+l[0].split("_")[1].replace(".","")+"_tRNA_"+l[1]
                 start=l[2]
                 stop=l[3]
-                if start<stop:
+                if start < stop:
                     strand="+"
                 else:
                     strand="-"
