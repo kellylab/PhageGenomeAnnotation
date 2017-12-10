@@ -165,7 +165,7 @@ def cds_blast_annotations_to_gff3(phage, prod_path, faa_path, blast_path, cov_th
                 col9 += "; codon_start=%s" % coords[4]
 
             if str(stop) != str(coords[5]) and strand == '-':
-                new_val = stop - coords[5] + 1
+                new_val = int(stop) - int(coords[5]) + 1
                 col9 += "; codon_start=%s" % coords[5]
             ### CHANGED OVER
 
